@@ -1,0 +1,7 @@
+steps:
+  - name: node:14.16.0
+    entrypoint: npm
+    args: ['ci']
+  - name: node:14.16.0
+    entrypoint: npm
+    args: ['run', 'lint']
