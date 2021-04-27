@@ -177,4 +177,5 @@ module.exports = {
       await transaction.rollback();
       throw e;
     }
+  },
 };

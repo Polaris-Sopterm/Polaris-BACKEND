@@ -2,8 +2,9 @@ module.exports = {
   up: async (queryInterface) => {
     const transaction = await queryInterface.sequelize.transaction();
     try {
-      await queryInterface.addConstraint('journeys', ['userIdx'], {
+      await queryInterface.addConstraint('journeys', {
         type: 'foreign key',
+        fields: ['userIdx'],
         name: 'journeys_users_fk',
         references: {
           table: 'users',
@@ -14,8 +15,9 @@ module.exports = {
         transaction,
       });
 
-      await queryInterface.addConstraint('toDos', ['userIdx'], {
+      await queryInterface.addConstraint('toDos', {
         type: 'foreign key',
+        fields: ['userIdx'],
         name: 'toDos_users_fk',
         references: {
           table: 'users',
@@ -26,8 +28,9 @@ module.exports = {
         transaction,
       });
 
-      await queryInterface.addConstraint('toDos', ['journeyIdx'], {
+      await queryInterface.addConstraint('toDos', {
         type: 'foreign key',
+        fields: ['journeyIdx'],
         name: 'toDos_journeys_fk',
         references: {
           table: 'journeys',

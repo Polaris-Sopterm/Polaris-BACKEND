@@ -46,9 +46,21 @@ module.exports = (sequelize, DataTypes) => {
 
   ToDo.associate = (models) => {
     /** 1 : N   User : ToDo */
-    ToDo.belongsTo(models.User);
+    ToDo.belongsTo(models.User, {
+      foreignKey: {
+        name: 'userIdx',
+        allowNull: false,
+      },
+      onDelete: 'CASCADE',
+    });
     /** 1 : N   Journey : ToDo */
-    ToDo.belongsTo(models.Journey);
+    ToDo.belongsTo(models.Journey, {
+      foreignKey: {
+        name: 'userIdx',
+        allowNull: true,
+      },
+      onDelete: 'CASCADE',
+    });
   };
 
   return ToDo;

@@ -44,15 +44,9 @@ module.exports = (sequelize, DataTypes) => {
 
   User.associate = (models) => {
     /** 1 : N   User : Journey */
-    User.hasMany(models.Journey, {
-      foreignKey: { name: 'userIdx', allowNull: false },
-      onDelete: 'cascade',
-    });
+    User.hasMany(models.Journey);
     /** 1 : N   User : Todo */
-    User.hasMany(models.ToDo, {
-      foreignKey: { name: 'userIdx', allowNull: false },
-      onDelete: 'cascade',
-    });
+    User.hasMany(models.ToDo);
   };
 
   return User;

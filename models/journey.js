@@ -66,11 +66,15 @@ module.exports = (sequelize, DataTypes) => {
 
   Journey.associate = (models) => {
     /** 1 : N   User : Journey */
-    Journey.belongsTo(models.User);
-    /** 1 : N   Journey : ToDo */
-    Journey.hasMany(models.ToDo, {
-      foreignKey: { name: 'journeyIdx', allowNull: true },
+    Journey.belongsTo(models.User, {
+      foreignKey: {
+        name: 'userIdx',
+        allowNull: false,
+      },
+      onDelete: 'CASCADE',
     });
+    /** 1 : N   Journey : ToDo */
+    Journey.hasMany(models.ToDo);
   };
 
   Journey.VALUES = VALUES;
