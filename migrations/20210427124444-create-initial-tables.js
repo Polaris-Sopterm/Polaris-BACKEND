@@ -20,11 +20,6 @@ module.exports = {
           name: {
             allowNull: false,
             type: Sequelize.STRING(20),
-            unique: true,
-          },
-          salt: {
-            allowNull: false,
-            type: Sequelize.STRING(200),
           },
           password: {
             allowNull: false,
@@ -32,15 +27,15 @@ module.exports = {
           },
           createdAt: {
             allowNull: false,
-            type: Sequelize.DATE,
+            type: Sequelize.DATE(3),
           },
           updatedAt: {
             allowNull: false,
-            type: Sequelize.DATE,
+            type: Sequelize.DATE(3),
           },
           deletedAt: {
             allowNull: true,
-            type: Sequelize.DATE,
+            type: Sequelize.DATE(3),
           },
         },
         { transaction },
@@ -93,15 +88,15 @@ module.exports = {
           },
           date: {
             allowNull: false,
-            type: Sequelize.DATE,
+            type: Sequelize.DATEONLY,
           },
           createdAt: {
             allowNull: false,
-            type: Sequelize.DATE,
+            type: Sequelize.DATE(3),
           },
           updatedAt: {
             allowNull: false,
-            type: Sequelize.DATE,
+            type: Sequelize.DATE(3),
           },
           userIdx: {
             allowNull: false,
@@ -134,17 +129,17 @@ module.exports = {
             type: Sequelize.BOOLEAN,
           },
           isDone: {
-            allowNull: false,
-            defaultValue: false,
-            type: Sequelize.BOOLEAN,
+            allowNull: true,
+            defaultValue: null,
+            type: Sequelize.DATE(3),
           },
           createdAt: {
             allowNull: false,
-            type: Sequelize.DATE,
+            type: Sequelize.DATE(3),
           },
           updatedAt: {
             allowNull: false,
-            type: Sequelize.DATE,
+            type: Sequelize.DATE(3),
           },
           userIdx: {
             allowNull: false,
@@ -168,9 +163,9 @@ module.exports = {
   down: async (queryInterface) => {
     const transaction = await queryInterface.sequelize.transaction();
     try {
-      await queryInterface.dropTable('users');
-      await queryInterface.dropTable('journeys');
-      await queryInterface.dropTable('toDos');
+      await queryInterface.dropTable('users', { transaction });
+      await queryInterface.dropTable('journeys', { transaction });
+      await queryInterface.dropTable('toDos', { transaction });
 
       await transaction.commit();
     } catch (e) {

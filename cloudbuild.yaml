@@ -5,3 +5,8 @@ steps:
   - name: node:14.16.0
     entrypoint: npm
     args: ['run', 'lint']
+  - name: node:14.16.0
+    entrypoint: npx
+    args: ['sequelize-cli','db:migrate', '--debug']
+    env:
+      - 'NODE_ENV=server_ci'

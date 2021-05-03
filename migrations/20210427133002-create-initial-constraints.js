@@ -49,8 +49,21 @@ module.exports = {
   },
 
   down: async (queryInterface) => {
-    await queryInterface.removeConstraint('journeys', 'journeys_users_fk');
-    await queryInterface.removeConstraint('toDos', 'toDos_users_fk');
-    await queryInterface.removeConstraint('toDos', 'toDos_journeys_fk');
+    const transaction = await queryInterface.sequelize.transaction();
+    try {
+      await queryInterface.removeConstraint('journeys', 'journeys_users_fk', {
+        transaction,
+      });
+      await queryInterface.removeConstraint('toDos', 'toDos_users_fk', {
+        transaction,
+      });
+      await queryInterface.removeConstraint('toDos', 'toDos_journeys_fk', {
+        transaction,
+      });
+      await transaction.commit();
+    } catch (e) {
+      await transaction.rollback();
+      throw e;
+    }
   },
 };

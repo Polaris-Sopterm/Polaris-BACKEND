@@ -52,7 +52,23 @@ module.exports = (sequelize, DataTypes) => {
       },
       date: {
         allowNull: false,
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
+        validate: {
+          isDate: true,
+          notNull: true,
+        },
+      },
+      createdAt: {
+        allowNull: false,
+        type: DataTypes.DATE(3),
+        validate: {
+          isDate: true,
+          notNull: true,
+        },
+      },
+      updatedAt: {
+        allowNull: false,
+        type: DataTypes.DATE(3),
         validate: {
           isDate: true,
           notNull: true,
@@ -74,7 +90,12 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: 'CASCADE',
     });
     /** 1 : N   Journey : ToDo */
-    Journey.hasMany(models.ToDo);
+    Journey.hasMany(models.ToDo, {
+      foreignKey: 'journeyIdx',
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
+      sourceKey: 'idx',
+    });
   };
 
   Journey.VALUES = VALUES;

@@ -1,4 +1,10 @@
 module.exports = {
+  server_ci: {
+    database: 'polaris',
+    dialect: 'sqlite',
+    storage: 'db.sqlite3',
+    logging: false,
+  },
   ci: {
     database: 'polaris',
     define: {

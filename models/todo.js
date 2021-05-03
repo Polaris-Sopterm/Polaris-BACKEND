@@ -31,10 +31,26 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       isDone: {
-        allowNull: false,
-        defaultValue: false,
-        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        defaultValue: null,
+        type: DataTypes.DATE(3),
         validate: {
+          isDate: true,
+        },
+      },
+      createdAt: {
+        allowNull: false,
+        type: DataTypes.DATE(3),
+        validate: {
+          isDate: true,
+          notNull: true,
+        },
+      },
+      updatedAt: {
+        allowNull: false,
+        type: DataTypes.DATE(3),
+        validate: {
+          isDate: true,
           notNull: true,
         },
       },
@@ -56,7 +72,7 @@ module.exports = (sequelize, DataTypes) => {
     /** 1 : N   Journey : ToDo */
     ToDo.belongsTo(models.Journey, {
       foreignKey: {
-        name: 'userIdx',
+        name: 'journeyIdx',
         allowNull: true,
       },
       onDelete: 'CASCADE',
