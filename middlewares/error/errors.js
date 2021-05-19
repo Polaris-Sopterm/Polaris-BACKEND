@@ -12,9 +12,25 @@ const errors = {
     },
   },
   USER: {
+    EMAIL_ALREADY_EXIST: {
+      code: 7,
+      message: '이미 존재하는 이메일 입니다.',
+    },
+    EMAIL_MISSING: {
+      code: 4,
+      message: '이메일이 없습니다.',
+    },
+    NAME_MISSING: {
+      code: 5,
+      message: '이름이 없습니다.',
+    },
     NOT_FOUND: {
       code: 3,
       message: '사용자를 찾을 수 없습니다.',
+    },
+    PASSWORD_MISSING: {
+      code: 6,
+      message: '비밀번호가 없습니다.',
     },
   },
 };
