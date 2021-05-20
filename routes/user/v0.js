@@ -33,7 +33,7 @@ const createUser = async (req, res) => {
   let existingUser;
   try {
     existingUser = await User.findOne({
-      attributes: ['id'],
+      attributes: ['idx'],
       where: {
         email,
       },
