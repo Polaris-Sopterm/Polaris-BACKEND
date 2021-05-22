@@ -10,7 +10,7 @@ const {
   createToken,
 } = require('../../utils/token');
 
-const asyncRoute = require('../../utils/asynRoute');
+const asyncRoute = require('../../utils/asyncRoute');
 
 const { Token, User } = db;
 
