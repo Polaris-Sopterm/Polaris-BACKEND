@@ -7,6 +7,7 @@ const { handler: errorHandler } = require('./middlewares/error');
 
 const indexRouter = require('./routes/index');
 const userRouter = require('./routes/user');
+const journeyRouter = require('./routes/journey');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/user/v0', userRouter.v0.router);
+app.use('/journey/v0', journeyRouter.v0.router);
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {

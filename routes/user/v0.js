@@ -6,11 +6,9 @@ const {
   HttpInternalServerError,
 } = require('../../middlewares/error');
 const db = require('../../models');
-const {
-  createToken,
-} = require('../../utils/token');
+const { createToken } = require('../../utils/token');
 
-const asyncRoute = require('../../utils/asynRoute');
+const asyncRoute = require('../../utils/asyncRoute');
 
 const { Token, User } = db;
 
@@ -20,11 +18,7 @@ const { Token, User } = db;
  * @returns {Promise<*>}
  */
 const createUser = async (req, res) => {
-  const {
-    email,
-    name,
-    password,
-  } = req.body;
+  const { email, name, password } = req.body;
 
   if (!email) throw new HttpBadRequest(Errors.USER.EMAIL_MISSING);
   if (!name) throw new HttpBadRequest(Errors.USER.NAME_MISSING);
@@ -67,9 +61,7 @@ const createUser = async (req, res) => {
 
   delete user.dataValues.password;
 
-  return res
-    .status(201)
-    .json(user);
+  return res.status(201).json(user);
 };
 
 const router = express.Router();
