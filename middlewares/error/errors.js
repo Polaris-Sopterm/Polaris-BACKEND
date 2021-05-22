@@ -33,6 +33,24 @@ const errors = {
       message: '비밀번호가 없습니다.',
     },
   },
+  JOURNEY: {
+    TITLE_MISSING: {
+      code: 8,
+      message: '여정 제목이 없습니다.',
+    },
+    DATE_MISSING: {
+      code: 9,
+      message: '날짜가 없습니다.',
+    },
+    VALUES_MISSING: {
+      code: 10,
+      message: '가치가 없습니다.',
+    },
+    VALUES_INCORRECT: {
+      code: 11,
+      message: '존재하지 않는 가치입니다.',
+    },
+  },
 };
 
 module.exports = errors;

@@ -7,7 +7,7 @@ const { extractToken } = require('./token');
 const { Errors, HttpNotFound, HttpInternalServerError } = require('../error');
 const AuthConfig = require('../../config/auth')[env];
 const db = require('../../models');
-const asyncRoute = require('../../utils/asynRoute');
+const asyncRoute = require('../../utils/asyncRoute');
 
 const { User } = db;
 
