@@ -54,6 +54,10 @@ const errors = {
       code: 11,
       message: '존재하지 않는 가치입니다.',
     },
+    NOT_FOUND: {
+      code: 12,
+      message: '해당 여정이 존재하지 않습니다.',
+    },
   },
 };
 
