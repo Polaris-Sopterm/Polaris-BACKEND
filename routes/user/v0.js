@@ -18,29 +18,31 @@ const { Token, User } = db;
  * @returns {Promise<*>}
  */
 const createUser = async (req, res) => {
-  const { email, name, password } = req.body;
+  const { email, nickname, password } = req.body;
 
   if (!email) throw new HttpBadRequest(Errors.USER.EMAIL_MISSING);
-  if (!name) throw new HttpBadRequest(Errors.USER.NAME_MISSING);
-  if (!password) throw new HttpBadRequest(Errors.USER.PASSWORD_MISSING);
 
-  let existingUser;
-  try {
-    existingUser = await User.findOne({
-      attributes: ['idx'],
-      where: {
-        email,
-      },
-    });
-  } catch (e) {
-    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+  {
+    let existingUser;
+    try {
+      existingUser = await User.findOne({
+        attributes: ['idx'],
+        where: {
+          email,
+        },
+      });
+    } catch (e) {
+      throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+    }
+    if (existingUser) throw new HttpBadRequest(Errors.USER.EMAIL_ALREADY_EXIST);
   }
 
-  if (existingUser) throw new HttpBadRequest(Errors.USER.EMAIL_ALREADY_EXIST);
+  if (!nickname) throw new HttpBadRequest(Errors.USER.NAME_MISSING);
+  if (!password) throw new HttpBadRequest(Errors.USER.PASSWORD_MISSING);
 
   const userData = {
     email,
-    name,
+    nickname,
     password,
   };
 
