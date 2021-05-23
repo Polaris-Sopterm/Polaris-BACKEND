@@ -4,6 +4,10 @@ const errors = {
       code: 1,
       message: '로그인하지 않았습니다.',
     },
+    LOGIN_INFO_INCORRECT: {
+      code: 13,
+      message: '로그인 정보가 잘못되었습니다.',
+    },
   },
   SERVER: {
     UNEXPECTED_ERROR: {
