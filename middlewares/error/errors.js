@@ -8,6 +8,10 @@ const errors = {
       code: 13,
       message: '로그인 정보가 잘못되었습니다.',
     },
+    REFRESH_TOKEN_NOT_FOUND: {
+      code: 14,
+      message: '재발급 토큰이 없습니다.',
+    },
   },
   SERVER: {
     UNEXPECTED_ERROR: {

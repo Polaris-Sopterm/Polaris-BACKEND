@@ -7,6 +7,7 @@
     "lint": "node ./node_modules/eslint/bin/eslint ."
   },
   "dependencies": {
+    "@types/express-serve-static-core": "^4.17.19",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
