@@ -43,9 +43,25 @@ module.exports = (sequelize, DataTypes) => {
           isIn: [Object.values(VALUES)],
         },
       },
-      weekInfo: {
+      year: {
         allowNull: false,
-        type: DataTypes.INTEGER,
+        type: DataTypes.INTEGER.UNSIGNED,
+        validate: {
+          notNull: true,
+        },
+      },
+      month: {
+        allowNull: false,
+        type: DataTypes.INTEGER.UNSIGNED,
+        validate: {
+          notNull: true,
+          max: 12,
+          min: 1,
+        },
+      },
+      weekNo: {
+        allowNull: false,
+        type: DataTypes.INTEGER.UNSIGNED,
         validate: {
           notNull: true,
         },
