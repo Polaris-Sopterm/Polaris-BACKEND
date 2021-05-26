@@ -39,7 +39,7 @@ const authenticate = (options) => {
 
     let user;
     try {
-      user = await User.findByPk(tokenData.userId);
+      user = await User.findByPk(tokenData.userIdx);
     } catch (e) {
       throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
     }
