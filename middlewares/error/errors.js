@@ -63,6 +63,24 @@ const errors = {
       message: '해당 여정이 존재하지 않습니다.',
     },
   },
+  TODO: {
+    DATE_MISSING: {
+      code: 17,
+      message: '날짜가 없습니다.',
+    },
+    INCORRECT_WEEK_NO: {
+      code: 18,
+      message: '여정과 할 일 날짜의 주차 정보가 일치하지 않습니다',
+    },
+    IS_TOP_MISSING: {
+      code: 16,
+      message: '할 일 상단 여부가 없습니다.',
+    },
+    TITLE_MISSING: {
+      code: 15,
+      message: '할 일 제목이 없습니다.',
+    },
+  },
 };
 
 module.exports = errors;
