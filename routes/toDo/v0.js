@@ -33,7 +33,7 @@ const createToDoByJourney = async (req, res) => {
 
     try {
       journey = await Journey.findByPk(journeyIdx, {
-        attributes: ['idx', 'weekNo'],
+        attributes: ['idx', 'year', 'month', 'weekNo'],
       });
     } catch (err) {
       throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
@@ -41,8 +41,12 @@ const createToDoByJourney = async (req, res) => {
 
     if (!journey) throw new HttpNotFound(Errors.JOURNEY.NOT_FOUND);
 
-    const checkWeekNo = await getWeekOfMonth(date);
-    if (journey.weekNo !== checkWeekNo) {
+    const checkWeekNo = await getWeekOfMonth(new Date(date));
+    if (
+      journey.year !== checkWeekNo.year
+      || journey.month !== checkWeekNo.month
+      || journey.weekNo !== checkWeekNo.weekNo
+    ) {
       throw new HttpBadRequest(Errors.TODO.INCORRECT_WEEK_NO);
     }
   }
