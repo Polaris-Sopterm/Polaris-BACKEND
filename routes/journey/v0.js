@@ -54,7 +54,12 @@ const createJourney = async (req, res) => {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
   }
 
-  return res.status(201).json(journeyResult);
+  return res.status(201).json({
+    idx: journeyResult.idx,
+    title: journeyResult.title,
+    value1: journeyResult.value1,
+    value2: journeyResult.value2,
+  });
 };
 
 /**
@@ -101,7 +106,44 @@ const updateJourney = async (req, res) => {
     HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
   }
 
-  return res.status(201).json(journeyData);
+  return res.status(201).json({
+    idx: journeyData.idx,
+    title: journeyData.title,
+    value1: journeyData.value1,
+    value2: journeyData.value2,
+  });
+};
+
+/**
+ * 여정 제목 목록 조회
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<*>}
+ */
+const getJourneyTitleList = async (req, res) => {
+  const { user } = res.locals.auth;
+  const { date } = req.query;
+
+  if (!date) throw new HttpBadRequest(Errors.TODO.DATE_MISSING);
+
+  const weekInfo = await getWeekOfMonth(new Date(date));
+
+  let journeys;
+  try {
+    journeys = await Journey.findAll({
+      attributes: ['idx', 'title', 'year', 'month', 'weekNo', 'userIdx'],
+      where: {
+        year: weekInfo.year,
+        month: weekInfo.month,
+        weekNo: weekInfo.weekNo,
+        userIdx: user.idx,
+      },
+    });
+  } catch (e) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+  }
+
+  return res.status(200).json(journeys);
 };
 
 /**
