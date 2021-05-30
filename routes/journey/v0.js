@@ -54,7 +54,12 @@ const createJourney = async (req, res) => {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
   }
 
-  return res.status(201).json(journeyResult);
+  return res.status(201).json({
+    idx: journeyResult.idx,
+    title: journeyResult.title,
+    value1: journeyResult.value1,
+    value2: journeyResult.value2,
+  });
 };
 
 /**
@@ -101,7 +106,12 @@ const updateJourney = async (req, res) => {
     HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
   }
 
-  return res.status(201).json(journeyData);
+  return res.status(201).json({
+    idx: journeyData.idx,
+    title: journeyData.title,
+    value1: journeyData.value1,
+    value2: journeyData.value2,
+  });
 };
 
 /**
