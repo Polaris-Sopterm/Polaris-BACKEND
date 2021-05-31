@@ -12,27 +12,28 @@ const {
 
 const { Journey, ToDo } = db;
 
+// TODO: 추후 createToDoByJourney 의 변경사항이 없다면 crateToDoBtDate 와 하나로 통합
 /**
  * @param {Request} req
  * @param {Response} res
  * @returns {Promise<*>}
  */
-const createToDoByJourney = async (req, res) => {
+const createToDo = async (req, res) => {
   const { user: currentUser } = res.locals.auth;
 
   const {
-    title, date, isTop, journeyIdx,
+    title, date, journeyIdx, isTop,
   } = req.body;
 
-  if (!title) throw new HttpBadRequest(Errors.TODO.TITLE_MISSING);
+  // TODO: 여정 제목이 없음에 대한 케이스 추가
   if (!date) throw new HttpBadRequest(Errors.TODO.DATE_MISSING);
+  if (!title) throw new HttpBadRequest(Errors.TODO.TITLE_MISSING);
   if (isTop.isNull) throw new HttpBadRequest(Errors.TODO.IS_TOP_MISSING);
 
   if (journeyIdx) {
     let journey;
-
     try {
-      journey = await Journey.findByPk(journeyIdx, {
+      journey = Journey.findByPk(journeyIdx, {
         attributes: ['idx', 'year', 'month', 'weekNo'],
       });
     } catch (err) {
@@ -71,6 +72,6 @@ const createToDoByJourney = async (req, res) => {
 
 const router = express.Router();
 
-router.post('/journey', auth.authenticate({}), asyncRoute(createToDoByJourney));
+router.post('/', auth.authenticate({}), asyncRoute(createToDo));
 
-module.exports = { router, createToDoByJourney };
+module.exports = { router, createToDo };
