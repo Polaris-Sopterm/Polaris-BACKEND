@@ -146,38 +146,6 @@ const getJourneyTitleList = async (req, res) => {
   return res.status(200).json(journeys);
 };
 
-/**
- * 여정 제목 목록 조회
- * @param {Request} req
- * @param {Response} res
- * @returns {Promise<*>}
- */
-const getJourneyTitleList = async (req, res) => {
-  const { user } = res.locals.auth;
-  const { date } = req.query;
-
-  if (!date) throw new HttpBadRequest(Errors.TODO.DATE_MISSING);
-
-  const weekInfo = await getWeekOfMonth(new Date(date));
-
-  let journeys;
-  try {
-    journeys = await Journey.findAll({
-      attributes: ['idx', 'title', 'year', 'month', 'weekNo', 'userIdx'],
-      where: {
-        year: weekInfo.year,
-        month: weekInfo.month,
-        weekNo: weekInfo.weekNo,
-        userIdx: user.idx,
-      },
-    });
-  } catch (e) {
-    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
-  }
-
-  return res.status(200).json(journeys);
-};
-
 const router = express.Router();
 
 // 여정 생성
