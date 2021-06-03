@@ -1,16 +1,19 @@
 const express = require('express');
+const moment = require('moment');
 
 const {
   Errors,
   HttpBadRequest,
   HttpInternalServerError,
 } = require('../../middlewares/error');
+const { getRandomValue } = require('../../utils/random');
+const { getWeekOfMonth } = require('../../utils/weekCalculation');
 const db = require('../../models');
 const { createToken } = require('../../utils/token');
 
 const asyncRoute = require('../../utils/asyncRoute');
 
-const { Token, User } = db;
+const { Journey, Token, User } = db;
 
 /**
  * @param {Request} req
@@ -45,11 +48,36 @@ const createUser = async (req, res) => {
     password,
   };
 
+  const transaction = await db.sequelize.transaction();
   let user;
   try {
-    user = await User.create(userData);
+    user = await User.create(userData, { transaction });
   } catch (e) {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+  }
+
+  const date = moment();
+  const weekInfo = await getWeekOfMonth(new Date(date));
+  const value1 = await getRandomValue(Object.values(Journey.VALUES));
+  const value2 = await getRandomValue(Object.values(Journey.VALUES), value1);
+
+  const journeyData = {
+    title: 'default',
+    value1,
+    value2,
+    year: weekInfo.year,
+    month: weekInfo.month,
+    weekNo: weekInfo.weekNo,
+    date,
+    userIdx: user.idx,
+  };
+
+  try {
+    await Journey.create(journeyData, { transaction });
+    await transaction.commit();
+  } catch (err) {
+    await transaction?.rollback();
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
   }
 
   try {
