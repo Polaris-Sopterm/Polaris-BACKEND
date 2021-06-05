@@ -79,7 +79,7 @@ module.exports = (sequelize, DataTypes) => {
   Token.associate = (models) => {
     Token.belongsTo(models.User, {
       foreignKey: {
-        name: 'userId',
+        name: 'userIdx',
         allowNull: true,
       },
       onDelete: 'CASCADE',

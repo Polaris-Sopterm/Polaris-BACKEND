@@ -85,6 +85,18 @@ module.exports = (sequelize, DataTypes) => {
       onUpdate: 'CASCADE',
       sourceKey: 'idx',
     });
+    User.hasMany(models.Token, {
+      foreignKey: 'userIdx',
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
+      sourceKey: 'idx',
+    });
+    User.hasMany(models.RefreshToken, {
+      foreignKey: 'userIdx',
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
+      sourceKey: 'idx',
+    });
   };
 
   return User;
