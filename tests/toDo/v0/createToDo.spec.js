@@ -1,4 +1,5 @@
 /* eslint-disable func-names */
+const env = process.env.NODE_ENV;
 
 const moment = require('moment');
 const httpMocks = require('node-mocks-http');
@@ -6,7 +7,7 @@ const should = require('should');
 
 const { createEmailUser } = require('../../common');
 const toDoRouter = require('../../../routes/toDo');
-const { truncateAllTables } = require('../../../utils/db');
+const truncateTables = require('../../../utils/db')[env];
 
 const method = 'POST';
 const url = '/toDo/v0';
@@ -15,7 +16,7 @@ describe(`toDo.v0.createToDo ${method} ${url}`, function () {
   let user;
 
   before(async function () {
-    await truncateAllTables();
+    await truncateTables();
 
     user = await createEmailUser();
   });
