@@ -14,4 +14,4 @@ steps:
     entrypoint: npm
     args: ['run', 'test']
     env:
-      - 'NODE_ENV=ci'
+      - 'NODE_ENV=server-ci'
