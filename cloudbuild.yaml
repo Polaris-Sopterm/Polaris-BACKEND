@@ -10,3 +10,8 @@ steps:
     args: ['sequelize-cli','db:migrate', '--debug']
     env:
       - 'NODE_ENV=server_ci'
+  - name: node:14.16.1
+    entrypoint: npm
+    args: ['run', 'test']
+    env:
+      - 'NODE_ENV=ci'
