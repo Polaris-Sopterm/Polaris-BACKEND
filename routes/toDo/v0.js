@@ -3,6 +3,7 @@ const asyncRoute = require('../../utils/asyncRoute');
 const db = require('../../models');
 const auth = require('../../middlewares/auth');
 const { getWeekOfMonth } = require('../../utils/weekCalculation');
+const { getRandomValue } = require('../../utils/random');
 const {
   Errors,
   HttpBadRequest,
@@ -12,7 +13,6 @@ const {
 
 const { Journey, ToDo } = db;
 
-// TODO: 추후 createToDoByJourney 의 변경사항이 없다면 crateToDoBtDate 와 하나로 통합
 /**
  * @param {Request} req
  * @param {Response} res
@@ -22,13 +22,60 @@ const createToDo = async (req, res) => {
   const { user: currentUser } = res.locals.auth;
 
   const {
-    title, date, journeyIdx, isTop,
+    title, date, journeyTitle, journeyIdx, isTop,
   } = req.body;
 
-  // TODO: 여정 제목이 없음에 대한 케이스 추가
   if (!date) throw new HttpBadRequest(Errors.TODO.DATE_MISSING);
   if (!title) throw new HttpBadRequest(Errors.TODO.TITLE_MISSING);
   if (isTop.isNull) throw new HttpBadRequest(Errors.TODO.IS_TOP_MISSING);
+
+  const weekInfo = await getWeekOfMonth(new Date(date));
+
+  const transaction = await db.sequelize.transaction();
+
+  if (journeyTitle === 'default') {
+    // 해당 주차의 기본 여정 여부 체크
+    let defaultJourney;
+    try {
+      defaultJourney = await Journey.findOne({
+        where: {
+          title: 'default',
+          userIdx: currentUser.idx,
+          year: weekInfo.year,
+          month: weekInfo.month,
+          weekNo: weekInfo.weekNo,
+        },
+      });
+    } catch (err) {
+      throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+    }
+
+    // 해당 주차의 기본 여정이 없다면 생성
+    if (!defaultJourney) {
+      const value1 = await getRandomValue(Object.values(Journey.VALUES), null);
+      const value2 = await getRandomValue(Object.values(Journey.VALUES), value1);
+
+      const defaultJourneyData = {
+        title: 'default',
+        value1,
+        value2,
+        year: weekInfo.year,
+        month: weekInfo.month,
+        weekNo: weekInfo.weekNo,
+        date,
+        userIdx: currentUser.idx,
+      };
+
+      try {
+        await Journey.create(defaultJourneyData, { transaction });
+      } catch (err) {
+        throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+      }
+    }
+  } else if (!journeyTitle) {
+    // 기본 여정 선택이 아닌데 여정의 idx 없는 경우 에러 처리
+    if (!journeyIdx) throw new HttpBadRequest(Errors.TODO.JOURNEY_IDX_MISSING);
+  }
 
   if (journeyIdx) {
     let journey;
@@ -42,11 +89,10 @@ const createToDo = async (req, res) => {
 
     if (!journey) throw new HttpNotFound(Errors.JOURNEY.NOT_FOUND);
 
-    const checkWeekNo = await getWeekOfMonth(new Date(date));
     if (
-      journey.year !== checkWeekNo.year
-      || journey.month !== checkWeekNo.month
-      || journey.weekNo !== checkWeekNo.weekNo
+      journey.year !== weekInfo.year
+      || journey.month !== weekInfo.month
+      || journey.weekNo !== weekInfo.weekNo
     ) {
       throw new HttpBadRequest(Errors.TODO.INCORRECT_WEEK_NO);
     }
@@ -62,8 +108,10 @@ const createToDo = async (req, res) => {
 
   let todo;
   try {
-    todo = await ToDo.create(toDoData);
+    todo = await ToDo.create(toDoData, { transaction });
+    await transaction.commit();
   } catch (err) {
+    await transaction?.rollback();
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
   }
 

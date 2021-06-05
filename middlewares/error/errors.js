@@ -76,6 +76,10 @@ const errors = {
       code: 16,
       message: '할 일 상단 여부가 없습니다.',
     },
+    JOURNEY_IDX_MISSING: {
+      code: 19,
+      message: '여정 인덱스가 없습니다.',
+    },
     TITLE_MISSING: {
       code: 15,
       message: '할 일 제목이 없습니다.',
