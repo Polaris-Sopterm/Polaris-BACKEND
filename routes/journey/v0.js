@@ -80,10 +80,6 @@ const updateJourney = async (req, res) => {
     }
   });
 
-  if (title) {
-    title = title.trim();
-  }
-
   let journey;
   try {
     journey = await Journey.findOne({
@@ -94,6 +90,14 @@ const updateJourney = async (req, res) => {
   }
 
   if (!journey) throw new HttpNotFound(Errors.JOURNEY.NOT_FOUND);
+
+  if (journey.title === 'default' && title) {
+    throw new HttpBadRequest(Errors.JOURNEY.DEFAULT_CANNOT_UPDATE);
+  }
+
+  if (title) {
+    title = title.trim();
+  }
 
   if (title) journey.title = title;
   if (value1) journey.value1 = value1;
