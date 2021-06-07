@@ -23,7 +23,21 @@ const getRandomInteger = (min, max) => {
   return Math.floor(Math.random() * (b - a)) + a;
 };
 
+/**
+ * @param {Object} obejct
+ * @param {String} value
+ * @returns {*}
+ */
+const getRandomValue = (obejct, value) => {
+  if (value) {
+    const idx = obejct.indexOf(value);
+    if (idx > -1) obejct.splice(idx, 1);
+  }
+  return obejct[Math.floor(Math.random() * obejct.length)];
+};
+
 module.exports = {
   getRandomHexString,
   getRandomInteger,
+  getRandomValue,
 };
