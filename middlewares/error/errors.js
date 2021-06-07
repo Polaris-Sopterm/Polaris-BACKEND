@@ -42,6 +42,10 @@ const errors = {
     },
   },
   JOURNEY: {
+    DEFAULT_CANNOT_UPDATE: {
+      code: 20,
+      message: '기본 여정은 제목을 수정할 수 없습니다.',
+    },
     TITLE_MISSING: {
       code: 8,
       message: '여정 제목이 없습니다.',
