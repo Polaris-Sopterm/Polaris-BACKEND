@@ -12,6 +12,10 @@ const errors = {
       code: 14,
       message: '재발급 토큰이 없습니다.',
     },
+    REFRESH_TOKEN_MISSING: {
+      code: 22,
+      message: '재발급 토큰이 없습니다.',
+    },
   },
   SERVER: {
     UNEXPECTED_ERROR: {
