@@ -13,7 +13,7 @@ const server = {
 
 const ci = {
   accessTokenSecret: '1234567890',
-  accessTokenExpire: '4h',
+  accessTokenExpire: '10s',
   refreshTokenExpire: '30d',
 };
 
