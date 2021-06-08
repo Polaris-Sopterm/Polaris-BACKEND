@@ -4,7 +4,12 @@ const jwt = require('jsonwebtoken');
 
 const actions = require('./action');
 const { extractToken } = require('./token');
-const { Errors, HttpNotFound, HttpInternalServerError } = require('../error');
+const {
+  Errors,
+  HttpNotFound,
+  HttpInternalServerError,
+  HttpUnauthorized,
+} = require('../error');
 const AuthConfig = require('../../config/auth')[env];
 const db = require('../../models');
 const asyncRoute = require('../../utils/asyncRoute');
@@ -34,7 +39,7 @@ const authenticate = (options) => {
       tokenData = jwt.verify(token, AuthConfig.accessTokenSecret);
     } catch (e) {
       res.locals.auth = {};
-      return onNotAuthenticated(req, res, next);
+      throw new HttpUnauthorized(Errors.AUTH.ACCESS_TOKEN_EXPIRED);
     }
 
     let user;
