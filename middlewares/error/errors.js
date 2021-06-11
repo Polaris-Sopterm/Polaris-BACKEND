@@ -12,6 +12,10 @@ const errors = {
       code: 14,
       message: '재발급 토큰이 없습니다.',
     },
+    REFRESH_TOKEN_MISSING: {
+      code: 22,
+      message: '재발급 토큰이 없습니다.',
+    },
     ACCESS_TOKEN_EXPIRED: {
       code: 21,
       message: '액세스 토큰이 만료되었습니다.',

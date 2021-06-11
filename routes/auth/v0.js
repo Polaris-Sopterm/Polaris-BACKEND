@@ -104,14 +104,72 @@ const logout = async (req, res) => {
   return res.status(204).end();
 };
 
+/**
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<*>}
+ */
+const refreshLogin = async (req, res) => {
+  const { refreshToken: refreshTokenValue } = req.body;
+  if (!refreshTokenValue) throw new HttpBadRequest(Errors.AUTH.REFRESH_TOKEN_MISSING);
+
+  let refreshToken;
+  try {
+    refreshToken = await RefreshToken.findOne({
+      where: {
+        refreshToken: refreshTokenValue,
+        expiresAt: {
+          [db.Sequelize.Op.gte]: moment(),
+        },
+      },
+    });
+  } catch (e) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+  }
+
+  if (!refreshToken) throw new HttpNotFound(Errors.AUTH.REFRESH_TOKEN_NOT_FOUND);
+
+  let accessToken;
+  try {
+    const accessTokenData = {
+      userId: refreshToken.userId,
+      refreshTokenId: refreshToken.id,
+    };
+    accessToken = auth.tokens.generateAccessToken(accessTokenData);
+  } catch (e) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+  }
+
+  try {
+    refreshToken.refreshToken = auth.tokens.generateRefreshToken();
+    refreshToken.expiresAt = moment().add(ms(authConfig.refreshTokenExpire), 'milliseconds')
+      .format('YYYY-MM-DD hh:mm:ss');
+    await refreshToken.save();
+  } catch (e) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+  }
+
+  const resBody = {
+    accessToken,
+    refreshToken: refreshToken.refreshToken,
+  };
+
+  return res
+    .status(200)
+    .json(resBody);
+};
+
 const router = express.Router();
 
 router.post('/', asyncRoute(emailLogin));
+
+router.put('/', asyncRoute(refreshLogin));
 
 router.delete('/', auth.authenticate({}), asyncRoute(logout));
 
 module.exports = {
   router,
   emailLogin,
+  refreshLogin,
   logout,
 };
