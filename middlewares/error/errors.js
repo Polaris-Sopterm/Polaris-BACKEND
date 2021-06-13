@@ -92,6 +92,10 @@ const errors = {
       code: 19,
       message: '여정 인덱스가 없습니다.',
     },
+    NOT_FOUND: {
+      code: 23,
+      message: '할 일이 없습니다.',
+    },
     TITLE_MISSING: {
       code: 15,
       message: '할 일 제목이 없습니다.',
