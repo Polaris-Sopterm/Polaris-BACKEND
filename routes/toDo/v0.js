@@ -80,7 +80,7 @@ const createToDo = async (req, res) => {
   if (journeyIdx) {
     let journey;
     try {
-      journey = Journey.findByPk(journeyIdx, {
+      journey = await Journey.findByPk(journeyIdx, {
         attributes: ['idx', 'year', 'month', 'weekNo'],
       });
     } catch (err) {
@@ -118,8 +118,80 @@ const createToDo = async (req, res) => {
   return res.status(201).json(todo);
 };
 
+/**
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<void>}
+ */
+const updateToDo = async (req, res) => {
+  const { user: currentUser } = res.locals.auth;
+
+  const { toDoIdx } = req.params;
+
+  const {
+    title,
+    date,
+    journeyIdx,
+    isTop,
+  } = req.body;
+
+  let toDo;
+
+  try {
+    toDo = await ToDo.findOne({
+      where: {
+        idx: toDoIdx,
+        userIdx: currentUser.idx,
+      },
+    });
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  if (!toDo) throw new HttpNotFound(Errors.TODO.NOT_FOUND);
+
+  if (title) toDo.title = title;
+  if (isTop !== undefined) toDo.isTop = isTop;
+
+  if (journeyIdx && date) {
+    const weekInfo = await getWeekOfMonth(new Date(date));
+
+    let journey;
+    try {
+      journey = await Journey.findByPk(journeyIdx, {
+        attributes: ['idx', 'year', 'month', 'weekNo'],
+      });
+    } catch (err) {
+      throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+    }
+
+    if (!journey) throw new HttpNotFound(Errors.JOURNEY.NOT_FOUND);
+
+    if (
+      journey.year !== weekInfo.year
+      || journey.month !== weekInfo.month
+      || journey.weekNo !== weekInfo.weekNo
+    ) {
+      throw new HttpBadRequest(Errors.TODO.INCORRECT_WEEK_NO);
+    }
+
+    toDo.journeyIdx = journeyIdx;
+    toDo.date = date;
+  }
+
+  try {
+    await toDo.save();
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  return res.status(200).json(toDo);
+};
+
 const router = express.Router();
 
 router.post('/', auth.authenticate({}), asyncRoute(createToDo));
 
-module.exports = { router, createToDo };
+router.patch('/:toDoIdx', auth.authenticate({}), asyncRoute(updateToDo));
+
+module.exports = { router, createToDo, updateToDo };
