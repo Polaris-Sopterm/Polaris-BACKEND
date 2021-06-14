@@ -3,9 +3,11 @@ const express = require('express');
 const {
   Errors,
   HttpBadRequest,
+  HttpNotFound,
   HttpInternalServerError,
 } = require('../../middlewares/error');
 const db = require('../../models');
+const auth = require('../../middlewares/auth');
 const { createToken } = require('../../utils/token');
 
 const asyncRoute = require('../../utils/asyncRoute');
@@ -98,14 +100,43 @@ const checkEmail = async (req, res) => {
   return res.status(201).json(resData);
 };
 
+/**
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<*>}
+ */
+const deleteUser = async (req, res) => {
+  const { user: currentUser } = res.locals.auth;
+
+  let user;
+  try {
+    user = await User.findByPk(currentUser.idx);
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  if (!user) throw new HttpNotFound(Errors.USER.NOT_FOUND);
+
+  try {
+    await user.destroy();
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  return res.status(204).end();
+};
+
 const router = express.Router();
 
 router.post('/', asyncRoute(createUser));
 
 router.post('/checkEmail', asyncRoute(checkEmail));
 
+router.delete('/', auth.authenticate({}), asyncRoute(deleteUser));
+
 module.exports = {
   router,
   createUser,
   checkEmail,
+  deleteUser,
 };
