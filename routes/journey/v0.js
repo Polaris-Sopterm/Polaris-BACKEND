@@ -1,4 +1,6 @@
 const express = require('express');
+const sequelize = require('sequelize');
+const moment = require('moment');
 const asyncRoute = require('../../utils/asyncRoute');
 const db = require('../../models');
 const auth = require('../../middlewares/auth');
@@ -10,7 +12,7 @@ const {
   HttpNotFound,
 } = require('../../middlewares/error');
 
-const { Journey } = db;
+const { Journey, ToDo } = db;
 
 /**
  * 여정 생성
@@ -150,6 +152,114 @@ const getJourneyTitleList = async (req, res) => {
   return res.status(200).json(journeys);
 };
 
+/**
+ * 여정 목록 조회
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<*>}
+ */
+const getJourneyList = async (req, res) => {
+  const { user } = res.locals.auth;
+  const {
+    date, year, month, weekNo,
+  } = req.query;
+
+  if (!(date || (year && month && weekNo))) {
+    throw new HttpBadRequest(Errors.JOURNEY.DATE_MISSING);
+  }
+
+  // 주차 리스트 생성 (사용자 가입 전 주 ~ 현재 기준 다다음주)
+  const joinedWeek = moment(user.createdAt).subtract(7, 'days');
+  const joinedWeekInfo = getWeekOfMonth(new Date(joinedWeek));
+  const todayWeekInfo = getWeekOfMonth(new Date());
+
+  const weekList = [joinedWeekInfo];
+  let nextWeek = joinedWeek;
+  let nextWeekInfo;
+
+  while (JSON.stringify(nextWeekInfo) !== JSON.stringify(todayWeekInfo)) {
+    nextWeek = new Date(moment(nextWeek).add(7, 'days'));
+    nextWeekInfo = getWeekOfMonth(nextWeek);
+    weekList.push(nextWeekInfo);
+  }
+
+  for (let i = 0; i < 2;) {
+    i += 1;
+    nextWeek = new Date(moment(nextWeek).add(7, 'days'));
+    nextWeekInfo = getWeekOfMonth(nextWeek);
+    weekList.push(nextWeekInfo);
+  }
+
+  // 여정 목록 조회
+  let journeyYear;
+  let journeyMonth;
+  let journeyWeek;
+
+  if (date) {
+    const weekInfo = await getWeekOfMonth(new Date(date));
+    journeyYear = weekInfo.year;
+    journeyMonth = weekInfo.month;
+    journeyWeek = weekInfo.weekNo;
+  } else {
+    journeyYear = year;
+    journeyMonth = month;
+    journeyWeek = weekNo;
+  }
+
+  let journeys;
+  try {
+    journeys = await Journey.findAll({
+      include: {
+        model: ToDo,
+        required: false,
+        attributes: [
+          'idx',
+          'title',
+          [
+            sequelize.fn(
+              'date_format',
+              sequelize.col('toDos.date'),
+              '%c월 %d일',
+            ),
+            'date',
+          ],
+          [sequelize.fn('dayofweek', sequelize.col('toDos.date')), 'day'],
+          'isTop',
+          'isDone',
+        ],
+      },
+      order: [
+        [{ model: ToDo }, 'isTop', 'DESC'],
+        [{ model: ToDo }, 'date', 'ASC'],
+      ],
+      attributes: ['idx', 'title', 'year', 'month', 'weekNo', 'userIdx', 'value1', 'value2'],
+      where: {
+        year: journeyYear,
+        month: journeyMonth,
+        weekNo: journeyWeek,
+        userIdx: user.idx,
+      },
+    });
+  } catch (e) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+  }
+
+  // 응답 date format 맞추기
+  const dayString = '일월화수목금토';
+  journeys.forEach((journey) => {
+    journey.toDos.forEach((toDo) => {
+      // eslint-disable-next-line no-param-reassign
+      toDo.dataValues.date = `${toDo.dataValues.date} ${dayString.charAt(
+        toDo.dataValues.day - 1,
+      )}요일`;
+      // eslint-disable-next-line no-param-reassign
+      delete toDo.dataValues.day;
+    });
+  });
+
+  return res.status(200).json({ weekList, journeys });
+};
+
 const router = express.Router();
 
 // 여정 생성
@@ -161,9 +271,13 @@ router.patch('/:journeyIdx', auth.authenticate({}), asyncRoute(updateJourney));
 // 여정 제목 목록 조회
 router.get('/title', auth.authenticate({}), asyncRoute(getJourneyTitleList));
 
+// 여정 목록 조회
+router.get('/', auth.authenticate({}), asyncRoute(getJourneyList));
+
 module.exports = {
   router,
   createJourney,
   updateJourney,
   getJourneyTitleList,
+  getJourneyList,
 };
