@@ -260,6 +260,36 @@ const getJourneyList = async (req, res) => {
   return res.status(200).json({ weekList, journeys });
 };
 
+/**
+ * 여정 삭제
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<*>}
+ */
+const deleteJourney = async (req, res) => {
+  const { user } = res.locals.auth;
+  const { journeyIdx } = req.params;
+
+  let journey;
+  try {
+    journey = await Journey.findOne({
+      where: { idx: journeyIdx, userIdx: user.idx },
+    });
+  } catch (e) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+  }
+
+  if (!journey) throw new HttpNotFound(Errors.JOURNEY.NOT_FOUND);
+
+  try {
+    await journey.destroy();
+  } catch (e) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+  }
+
+  return res.status(204).end();
+};
+
 const router = express.Router();
 
 // 여정 생성
@@ -274,10 +304,14 @@ router.get('/title', auth.authenticate({}), asyncRoute(getJourneyTitleList));
 // 여정 목록 조회
 router.get('/', auth.authenticate({}), asyncRoute(getJourneyList));
 
+// 여정 삭제
+router.delete('/:journeyIdx', auth.authenticate({}), asyncRoute(deleteJourney));
+
 module.exports = {
   router,
   createJourney,
   updateJourney,
   getJourneyTitleList,
   getJourneyList,
+  deleteJourney,
 };
