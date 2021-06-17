@@ -1,4 +1,5 @@
 const express = require('express');
+const moment = require('moment');
 const asyncRoute = require('../../utils/asyncRoute');
 const db = require('../../models');
 const auth = require('../../middlewares/auth');
@@ -188,10 +189,62 @@ const updateToDo = async (req, res) => {
   return res.status(200).json(toDo);
 };
 
+/**
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<*>}
+ */
+const listToDoByJourneys = async (req, res) => {
+  const { user: currentUser } = res.locals.auth;
+
+  const { year, month, weekNo } = req.query;
+
+  const where = {};
+  if (year && month && weekNo) {
+    where.year = year;
+    where.month = month;
+    where.weekNo = weekNo;
+  }
+
+  where.userIdx = currentUser.idx;
+
+  let listToDoByJourney;
+  try {
+    listToDoByJourney = await Journey.findAll({
+      attributes: ['idx', 'title', 'value1', 'value2', 'year', 'month', 'weekNo', 'userIdx'],
+      where,
+      order: [
+        [ToDo, 'isTop', 'DESC'],
+        [ToDo, 'date', 'ASC'],
+      ],
+      include: [{
+        model: ToDo,
+        attributes: ['idx', 'title', 'isTop', 'isDone', 'date', 'createdAt'],
+      }],
+    });
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  listToDoByJourney.forEach((journey) => {
+    journey.toDos.forEach((toDo) => {
+      const utcDate = new Date(toDo.dataValues.date).toUTCString();
+      // eslint-disable-next-line no-param-reassign
+      toDo.dataValues.date = moment(utcDate).locale('ko').format('YYYY년 M월 D일 dddd');
+    });
+  });
+
+  return res.status(200).json(listToDoByJourney);
+};
+
 const router = express.Router();
 
 router.post('/', auth.authenticate({}), asyncRoute(createToDo));
 
 router.patch('/:toDoIdx', auth.authenticate({}), asyncRoute(updateToDo));
 
-module.exports = { router, createToDo, updateToDo };
+router.get('/', auth.authenticate({}), asyncRoute(listToDoByJourneys));
+
+module.exports = {
+  router, createToDo, updateToDo, listToDoByJourneys,
+};
