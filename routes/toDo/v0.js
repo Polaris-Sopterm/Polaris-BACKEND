@@ -237,14 +237,73 @@ const listToDoByJourneys = async (req, res) => {
   return res.status(200).json(listToDoByJourney);
 };
 
+/**
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<*>}
+ */
+const listToDoByDate = async (req, res) => {
+  const { user: currentUser } = res.locals.auth;
+
+  const { year, month, weekNo } = req.query;
+
+  const where = {};
+  if (year && month && weekNo) {
+    where.year = year;
+    where.month = month;
+    where.weekNo = weekNo;
+  }
+
+  where.userIdx = currentUser.idx;
+
+  let listToDoByJourney;
+  try {
+    listToDoByJourney = await Journey.findAll({
+      attributes: ['idx', 'year', 'month', 'weekNo', 'userIdx'],
+      where,
+      order: [
+        [ToDo, 'isTop', 'DESC'],
+        [ToDo, 'date', 'ASC'],
+      ],
+      include: [{
+        model: ToDo,
+        attributes: ['idx', 'title', 'isTop', 'isDone', 'date', 'createdAt'],
+      }],
+    });
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  const toDoList = [];
+  listToDoByJourney.forEach((journey) => {
+    journey.toDos.forEach((toDo) => {
+      const utcDate = new Date(toDo.dataValues.date).toUTCString();
+      // eslint-disable-next-line no-param-reassign
+      toDo.dataValues.date = moment(utcDate).locale('ko').format('YYYY년 M월 D일 dddd');
+      toDoList.push(toDo);
+    });
+  });
+
+  const resBody = {};
+  toDoList.forEach((toDo) => {
+    if (!Array.isArray(resBody[toDo.date])) {
+      resBody[toDo.date] = [];
+    }
+    resBody[toDo.date].push(toDo);
+  });
+  return res.status(200).json(resBody);
+};
+
 const router = express.Router();
 
 router.post('/', auth.authenticate({}), asyncRoute(createToDo));
 
 router.patch('/:toDoIdx', auth.authenticate({}), asyncRoute(updateToDo));
 
-router.get('/', auth.authenticate({}), asyncRoute(listToDoByJourneys));
+router.get('/journey', auth.authenticate({}), asyncRoute(listToDoByJourneys));
+
+router.get('/date', auth.authenticate({}), asyncRoute(listToDoByDate));
 
 module.exports = {
-  router, createToDo, updateToDo, listToDoByJourneys,
+  router, createToDo, updateToDo, listToDoByJourneys, listToDoByDate,
 };
