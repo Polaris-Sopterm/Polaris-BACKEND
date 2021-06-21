@@ -294,6 +294,39 @@ const listToDoByDate = async (req, res) => {
   return res.status(200).json(resBody);
 };
 
+/**
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<*>}
+ */
+const deleteToDo = async (req, res) => {
+  const { user: currentUser } = res.locals.auth;
+
+  const { toDoIdx } = req.params;
+
+  let toDo;
+  try {
+    toDo = await ToDo.findOne({
+      where: {
+        userIdx: currentUser.idx,
+        idx: toDoIdx,
+      },
+    });
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  if (!toDo) throw new HttpNotFound(Errors.TODO.NOT_FOUND);
+
+  try {
+    await toDo.destroy();
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  return res.status(204).end();
+};
+
 const router = express.Router();
 
 router.post('/', auth.authenticate({}), asyncRoute(createToDo));
@@ -304,6 +337,8 @@ router.get('/journey', auth.authenticate({}), asyncRoute(listToDoByJourneys));
 
 router.get('/date', auth.authenticate({}), asyncRoute(listToDoByDate));
 
+router.delete('/:toDoIdx', auth.authenticate({}), asyncRoute(deleteToDo));
+
 module.exports = {
-  router, createToDo, updateToDo, listToDoByJourneys, listToDoByDate,
+  router, createToDo, updateToDo, listToDoByJourneys, listToDoByDate, deleteToDo,
 };
