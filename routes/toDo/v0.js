@@ -1,4 +1,5 @@
 const express = require('express');
+const moment = require('moment');
 const asyncRoute = require('../../utils/asyncRoute');
 const db = require('../../models');
 const auth = require('../../middlewares/auth');
@@ -133,6 +134,7 @@ const updateToDo = async (req, res) => {
     date,
     journeyIdx,
     isTop,
+    isDone,
   } = req.body;
 
   let toDo;
@@ -179,6 +181,12 @@ const updateToDo = async (req, res) => {
     toDo.date = date;
   }
 
+  if (isDone === true) {
+    toDo.isDone = moment();
+  } else if (isDone === false) {
+    toDo.isDone = null;
+  }
+
   try {
     await toDo.save();
   } catch (err) {
@@ -188,10 +196,156 @@ const updateToDo = async (req, res) => {
   return res.status(200).json(toDo);
 };
 
+/**
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<*>}
+ */
+const listToDoByJourneys = async (req, res) => {
+  const { user: currentUser } = res.locals.auth;
+
+  const { year, month, weekNo } = req.query;
+
+  const where = {};
+  if (year && month && weekNo) {
+    where.year = year;
+    where.month = month;
+    where.weekNo = weekNo;
+  }
+
+  where.userIdx = currentUser.idx;
+
+  let listToDoByJourney;
+  try {
+    listToDoByJourney = await Journey.findAll({
+      attributes: ['idx', 'title', 'value1', 'value2', 'year', 'month', 'weekNo', 'userIdx'],
+      where,
+      order: [
+        [ToDo, 'isTop', 'DESC'],
+        [ToDo, 'date', 'ASC'],
+      ],
+      include: [{
+        model: ToDo,
+        attributes: ['idx', 'title', 'isTop', 'isDone', 'date', 'createdAt'],
+      }],
+    });
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  listToDoByJourney.forEach((journey) => {
+    journey.toDos.forEach((toDo) => {
+      const utcDate = new Date(toDo.dataValues.date).toUTCString();
+      // eslint-disable-next-line no-param-reassign
+      toDo.dataValues.date = moment(utcDate).locale('ko').format('M월 D일 dddd');
+    });
+  });
+
+  return res.status(200).json(listToDoByJourney);
+};
+
+/**
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<*>}
+ */
+const listToDoByDate = async (req, res) => {
+  const { user: currentUser } = res.locals.auth;
+
+  const { year, month, weekNo } = req.query;
+
+  const where = {};
+  if (year && month && weekNo) {
+    where.year = year;
+    where.month = month;
+    where.weekNo = weekNo;
+  }
+
+  where.userIdx = currentUser.idx;
+
+  let listToDoByJourney;
+  try {
+    listToDoByJourney = await Journey.findAll({
+      attributes: ['idx', 'year', 'month', 'weekNo', 'userIdx'],
+      where,
+      order: [
+        [ToDo, 'isTop', 'DESC'],
+        [ToDo, 'date', 'ASC'],
+      ],
+      include: [{
+        model: ToDo,
+        attributes: ['idx', 'title', 'isTop', 'isDone', 'date', 'createdAt'],
+      }],
+    });
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  const toDoList = [];
+  listToDoByJourney.forEach((journey) => {
+    journey.toDos.forEach((toDo) => {
+      const utcDate = new Date(toDo.dataValues.date).toUTCString();
+      // eslint-disable-next-line no-param-reassign
+      toDo.dataValues.date = moment(utcDate).locale('ko').format('M월 D일 dddd');
+      toDoList.push(toDo);
+    });
+  });
+
+  const resBody = {};
+  toDoList.forEach((toDo) => {
+    if (!Array.isArray(resBody[toDo.date])) {
+      resBody[toDo.date] = [];
+    }
+    resBody[toDo.date].push(toDo);
+  });
+  return res.status(200).json(resBody);
+};
+
+/**
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<*>}
+ */
+const deleteToDo = async (req, res) => {
+  const { user: currentUser } = res.locals.auth;
+
+  const { toDoIdx } = req.params;
+
+  let toDo;
+  try {
+    toDo = await ToDo.findOne({
+      where: {
+        userIdx: currentUser.idx,
+        idx: toDoIdx,
+      },
+    });
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  if (!toDo) throw new HttpNotFound(Errors.TODO.NOT_FOUND);
+
+  try {
+    await toDo.destroy();
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  return res.status(204).end();
+};
+
 const router = express.Router();
 
 router.post('/', auth.authenticate({}), asyncRoute(createToDo));
 
 router.patch('/:toDoIdx', auth.authenticate({}), asyncRoute(updateToDo));
 
-module.exports = { router, createToDo, updateToDo };
+router.get('/journey', auth.authenticate({}), asyncRoute(listToDoByJourneys));
+
+router.get('/date', auth.authenticate({}), asyncRoute(listToDoByDate));
+
+router.delete('/:toDoIdx', auth.authenticate({}), asyncRoute(deleteToDo));
+
+module.exports = {
+  router, createToDo, updateToDo, listToDoByJourneys, listToDoByDate, deleteToDo,
+};
