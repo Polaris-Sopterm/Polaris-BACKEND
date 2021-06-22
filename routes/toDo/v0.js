@@ -134,6 +134,7 @@ const updateToDo = async (req, res) => {
     date,
     journeyIdx,
     isTop,
+    isDone,
   } = req.body;
 
   let toDo;
@@ -178,6 +179,12 @@ const updateToDo = async (req, res) => {
 
     toDo.journeyIdx = journeyIdx;
     toDo.date = date;
+  }
+
+  if (isDone === true) {
+    toDo.isDone = moment();
+  } else if (isDone === false) {
+    toDo.isDone = null;
   }
 
   try {
@@ -230,7 +237,7 @@ const listToDoByJourneys = async (req, res) => {
     journey.toDos.forEach((toDo) => {
       const utcDate = new Date(toDo.dataValues.date).toUTCString();
       // eslint-disable-next-line no-param-reassign
-      toDo.dataValues.date = moment(utcDate).locale('ko').format('YYYY년 M월 D일 dddd');
+      toDo.dataValues.date = moment(utcDate).locale('ko').format('M월 D일 dddd');
     });
   });
 
@@ -279,7 +286,7 @@ const listToDoByDate = async (req, res) => {
     journey.toDos.forEach((toDo) => {
       const utcDate = new Date(toDo.dataValues.date).toUTCString();
       // eslint-disable-next-line no-param-reassign
-      toDo.dataValues.date = moment(utcDate).locale('ko').format('YYYY년 M월 D일 dddd');
+      toDo.dataValues.date = moment(utcDate).locale('ko').format('M월 D일 dddd');
       toDoList.push(toDo);
     });
   });
