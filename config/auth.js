@@ -19,7 +19,7 @@ const ci = {
 
 const dev = {
   accessTokenSecret: process.env.JWT_SECRET,
-  accessTokenExpire: '4h',
+  accessTokenExpire: '5m',
   refreshTokenExpire: '30d',
 };
 
