@@ -9,6 +9,7 @@ const authRouter = require('./routes/auth');
 const toDoRouter = require('./routes/toDo');
 const userRouter = require('./routes/user');
 const journeyRouter = require('./routes/journey');
+const retrospectRouter = require('./routes/retrospect');
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/auth/v0', authRouter.v0.router);
 app.use('/toDo/v0', toDoRouter.v0.router);
 app.use('/user/v0', userRouter.v0.router);
 app.use('/journey/v0', journeyRouter.v0.router);
+app.use('/retrospect/v0', retrospectRouter.v0.router);
 
 app.use(errorHandler);
 
