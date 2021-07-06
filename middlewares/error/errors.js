@@ -75,6 +75,28 @@ const errors = {
       message: '해당 여정이 존재하지 않습니다.',
     },
   },
+  RETROSPECT: {
+    ALREADY_EXIST: {
+      code: 28,
+      message: '이미 존재하는 회고 기록입니다.',
+    },
+    EMOTION_INCORRECT: {
+      code: 27,
+      message: '감정이 올바르지 않습니다.',
+    },
+    DEGREE_INCORRECT: {
+      code: 26,
+      message: '맞닿은 별에 따른 정도 값이 올바르지 않습니다.',
+    },
+    WEEK_DATA_MISSING: {
+      code: 24,
+      message: '주차 정보가 없습니다.',
+    },
+    RETROSPECT_DATA_MISSING: {
+      code: 25,
+      message: '회고 정보가 없습니다.',
+    },
+  },
   TODO: {
     DATE_MISSING: {
       code: 17,
