@@ -88,6 +88,10 @@ const errors = {
       code: 26,
       message: '맞닿은 별에 따른 정도 값이 올바르지 않습니다.',
     },
+    NOT_FOUND: {
+      code: 29,
+      message: '해당 주차 회고 기록이 없습니다.',
+    },
     WEEK_DATA_MISSING: {
       code: 24,
       message: '주차 정보가 없습니다.',
