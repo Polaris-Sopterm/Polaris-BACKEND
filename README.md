@@ -7,8 +7,12 @@
 
 ## Server Architecture
 ---
+## 🍀 Database Modeling
+---
+<img src="https://user-images.githubusercontent.com/49120090/125075043-13499500-e0f9-11eb-838c-630baab64fde.png" width="700" height="500">
 
-## API DOCUMENTATION
+
+## 📖 API DOCUMENTATION 
 ---
 
 [API 문서](https://github.com/Polaris-Sopterm/Polaris-BACKEND/wiki/%E2%AD%90-Home-%E2%AD%90)
