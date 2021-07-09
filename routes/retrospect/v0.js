@@ -3,6 +3,7 @@ const express = require('express');
 const {
   Errors,
   HttpBadRequest,
+  HttpNotFound,
   HttpInternalServerError,
 } = require('../../middlewares/error');
 const db = require('../../models');
@@ -161,14 +162,48 @@ const createRetrospect = async (req, res) => {
     .json(retrospect);
 };
 
+/**
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<*>}
+ */
+const getRetrospect = async (req, res) => {
+  const { user: currentUser } = res.locals.auth;
+
+  const { year, month, weekNo } = req.params;
+
+  let retrospect;
+  try {
+    retrospect = await Retrospect.findOne({
+      where: {
+        year,
+        month,
+        weekNo,
+        userIdx: currentUser.idx,
+      },
+    });
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  if (!retrospect) throw new HttpNotFound(Errors.RETROSPECT.NOT_FOUND);
+
+  return res
+    .status(200)
+    .json(retrospect);
+};
+
 const router = express.Router();
 
 router.get('/value', auth.authenticate({}), asyncRoute(listValues));
 
 router.post('/', auth.authenticate({}), asyncRoute(createRetrospect));
 
+router.get('/:year/:month/:weeNo', auth.authenticate({}), asyncRoute(getRetrospect));
+
 module.exports = {
   router,
   listValues,
   createRetrospect,
+  getRetrospect,
 };
