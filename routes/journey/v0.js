@@ -1,5 +1,4 @@
 const express = require('express');
-const sequelize = require('sequelize');
 const moment = require('moment');
 const asyncRoute = require('../../utils/asyncRoute');
 const db = require('../../models');
@@ -212,21 +211,7 @@ const getJourneyList = async (req, res) => {
       include: {
         model: ToDo,
         required: false,
-        attributes: [
-          'idx',
-          'title',
-          [
-            sequelize.fn(
-              'date_format',
-              sequelize.col('toDos.date'),
-              '%c월 %d일',
-            ),
-            'date',
-          ],
-          [sequelize.fn('dayofweek', sequelize.col('toDos.date')), 'day'],
-          'isTop',
-          'isDone',
-        ],
+        attributes: ['idx', 'title', 'date', 'isTop', 'isDone'],
       },
       order: [
         [{ model: ToDo }, 'isTop', 'DESC'],
@@ -244,16 +229,13 @@ const getJourneyList = async (req, res) => {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
   }
 
-  // 응답 date format 맞추기
-  const dayString = '일월화수목금토';
   journeys.forEach((journey) => {
     journey.toDos.forEach((toDo) => {
+      const utcDate = new Date(toDo.dataValues.date).toUTCString();
       // eslint-disable-next-line no-param-reassign
-      toDo.dataValues.date = `${toDo.dataValues.date} ${dayString.charAt(
-        toDo.dataValues.day - 1,
-      )}요일`;
-      // eslint-disable-next-line no-param-reassign
-      delete toDo.dataValues.day;
+      toDo.dataValues.date = moment(utcDate)
+        .locale('ko')
+        .format('M월 D일 dddd');
     });
   });
 
