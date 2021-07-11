@@ -127,6 +127,12 @@ const errors = {
       message: '할 일 제목이 없습니다.',
     },
   },
+  HOME: {
+    IS_SKIPPED_MISSING: {
+      code: 30,
+      message: '건너뛰기 여부가 없습니다.',
+    },
+  },
 };
 
 module.exports = errors;
