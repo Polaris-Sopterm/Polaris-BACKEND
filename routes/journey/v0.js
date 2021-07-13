@@ -4,6 +4,7 @@ const asyncRoute = require('../../utils/asyncRoute');
 const db = require('../../models');
 const auth = require('../../middlewares/auth');
 const { getWeekOfMonth } = require('../../utils/weekCalculation');
+const { getRandomValue } = require('../../utils/random');
 const {
   Errors,
   HttpBadRequest,
@@ -227,6 +228,36 @@ const getJourneyList = async (req, res) => {
     });
   } catch (e) {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+  }
+
+  if (journeys.length === 0) {
+    const journeyRandomTitle = [
+      '지금 이런 별이 필요할 것 같아요',
+      '이런 별을 찾는건 어떠세요?',
+    ];
+
+    const randomJourneyPromise = journeyRandomTitle.map(async (title) => {
+      const value1 = await getRandomValue(Object.values(Journey.VALUES), null);
+      const value2 = await getRandomValue(
+        Object.values(Journey.VALUES),
+        value1,
+      );
+      const randomJourney = {
+        idx: null,
+        title,
+        year: journeyYear,
+        month: journeyMonth,
+        weekNo: journeyWeek,
+        userIdx: user.idx,
+        value1,
+        value2,
+        toDos: [],
+      };
+      await journeys.push(randomJourney);
+    });
+    await Promise.all(randomJourneyPromise);
+
+    return res.status(200).json({ weekList, journeys });
   }
 
   journeys.forEach((journey) => {
