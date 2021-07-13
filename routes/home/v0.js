@@ -25,7 +25,9 @@ const getHomeBanner = async (req, res) => {
   const { user } = res.locals.auth;
   const { isSkipped } = req.query;
 
-  if (!isSkipped) throw new HttpBadRequest(Errors.HOME.IS_SKIPPED_MISSING);
+  if (isSkipped === undefined) {
+    throw new HttpBadRequest(Errors.HOME.IS_SKIPPED_MISSING);
+  }
 
   const resJourneyComplete = {
     case: 'journey_complete',
@@ -129,9 +131,11 @@ const getHomeBanner = async (req, res) => {
   }
 
   // 1. 회고 완료  or 건너뛰기 한 경우 or {회고 미완료&지난 여정이 없는 경우}
-  if (lastRetrospect || isSkipped || (!lastRetrospect && !lastJourney)) {
+  if (
+    lastRetrospect || isSkipped === true || (!lastRetrospect && !lastJourney)
+  ) {
     // 1-1. 이번주 여정 작성 완료
-    if (thisWeekJourney) {
+    if (thisWeekJourney.length !== 0) {
       const thisWeekValues = {};
       const thisWeekFoundValues = {};
       let yesterdayValueCnt = 0;
@@ -201,8 +205,7 @@ const getHomeBanner = async (req, res) => {
       0,
       bannerData.journey_incomplete.mainText.length - 1,
     );
-    resJourneyIncomplete.mainText =
-      bannerData.journey_incomplete[randomInteger];
+    resJourneyIncomplete.mainText = bannerData.journey_incomplete[randomInteger];
     return res.status(200).json(resJourneyIncomplete);
   }
   // 2. 회고 미완료 &. 지난 여정이 있는 경우
@@ -259,7 +262,7 @@ const getHomeBanner = async (req, res) => {
 const router = express.Router();
 
 // 홈 화면 배너 조회
-router.get('/banner', auth.authenticate({}), asyncRoute(getHome));
+router.get('/banner', auth.authenticate({}), asyncRoute(getHomeBanner));
 
 module.exports = {
   router,
