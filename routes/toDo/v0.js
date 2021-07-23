@@ -298,7 +298,19 @@ const listToDoByDate = async (req, res) => {
     }
     resBody[toDo.date].push(toDo);
   });
-  return res.status(200).json(resBody);
+
+  const resBody2 = {
+    data: [],
+  };
+  // eslint-disable-next-line no-restricted-syntax
+  for (const key of Object.keys(resBody)) {
+    resBody2.data.push({
+      day: key,
+      todoList: resBody[key],
+    });
+  }
+
+  return res.status(200).json(resBody2);
 };
 
 /**

@@ -1,10 +1,10 @@
 const express = require('express');
-const sequelize = require('sequelize');
 const moment = require('moment');
 const asyncRoute = require('../../utils/asyncRoute');
 const db = require('../../models');
 const auth = require('../../middlewares/auth');
 const { getWeekOfMonth } = require('../../utils/weekCalculation');
+const { getRandomValue } = require('../../utils/random');
 const {
   Errors,
   HttpBadRequest,
@@ -212,21 +212,7 @@ const getJourneyList = async (req, res) => {
       include: {
         model: ToDo,
         required: false,
-        attributes: [
-          'idx',
-          'title',
-          [
-            sequelize.fn(
-              'date_format',
-              sequelize.col('toDos.date'),
-              '%c월 %d일',
-            ),
-            'date',
-          ],
-          [sequelize.fn('dayofweek', sequelize.col('toDos.date')), 'day'],
-          'isTop',
-          'isDone',
-        ],
+        attributes: ['idx', 'title', 'date', 'isTop', 'isDone'],
       },
       order: [
         [{ model: ToDo }, 'isTop', 'DESC'],
@@ -244,16 +230,43 @@ const getJourneyList = async (req, res) => {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
   }
 
-  // 응답 date format 맞추기
-  const dayString = '일월화수목금토';
+  if (journeys.length === 0) {
+    const journeyRandomTitle = [
+      '지금 이런 별이 필요할 것 같아요',
+      '이런 별을 찾는건 어떠세요?',
+    ];
+
+    const randomJourneyPromise = journeyRandomTitle.map(async (title) => {
+      const value1 = await getRandomValue(Object.values(Journey.VALUES), null);
+      const value2 = await getRandomValue(
+        Object.values(Journey.VALUES),
+        value1,
+      );
+      const randomJourney = {
+        idx: null,
+        title,
+        year: journeyYear,
+        month: journeyMonth,
+        weekNo: journeyWeek,
+        userIdx: user.idx,
+        value1,
+        value2,
+        toDos: [],
+      };
+      await journeys.push(randomJourney);
+    });
+    await Promise.all(randomJourneyPromise);
+
+    return res.status(200).json({ weekList, journeys });
+  }
+
   journeys.forEach((journey) => {
     journey.toDos.forEach((toDo) => {
+      const utcDate = new Date(toDo.dataValues.date).toUTCString();
       // eslint-disable-next-line no-param-reassign
-      toDo.dataValues.date = `${toDo.dataValues.date} ${dayString.charAt(
-        toDo.dataValues.day - 1,
-      )}요일`;
-      // eslint-disable-next-line no-param-reassign
-      delete toDo.dataValues.day;
+      toDo.dataValues.date = moment(utcDate)
+        .locale('ko')
+        .format('M월 D일 dddd');
     });
   });
 
