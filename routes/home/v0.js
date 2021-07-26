@@ -40,7 +40,7 @@ const getHomeBanner = async (req, res) => {
 
   const resJourneyIncomplete = {
     case: 'journey_incomplete',
-    starList: {},
+    starList: [],
     mainText: '',
     bannerTitle: bannerData.journey_incomplete.bannerTitle,
     bannerText: bannerData.journey_incomplete.bannerText,
@@ -49,7 +49,7 @@ const getHomeBanner = async (req, res) => {
 
   const resRetrospect = {
     case: 'retrospect',
-    starList: {},
+    starList: [],
     mainText: '',
     bannerTitle: '',
     bannerText: '',
@@ -136,7 +136,7 @@ const getHomeBanner = async (req, res) => {
   ) {
     // 1-1. 이번주 여정 작성 완료
     if (thisWeekJourney.length !== 0) {
-      const thisWeekValues = {};
+      const thisWeekValuesSet = new Set();
       const thisWeekFoundValues = {};
       let yesterdayValueCnt = 0;
       const yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
@@ -145,8 +145,8 @@ const getHomeBanner = async (req, res) => {
           const toDoValue1 = journeys.dataValues.value1;
           const toDoValue2 = journeys.dataValues.value2;
 
-          thisWeekValues[toDoValue1] = 0;
-          if (thisWeekValues[toDoValue2]) thisWeekValues[toDoValue2] = 0;
+          thisWeekValuesSet.add(toDoValue1);
+          thisWeekValuesSet.add(toDoValue2);
           if (toDo.dataValues.isDone) {
             if (thisWeekFoundValues[toDoValue1]) {
               thisWeekFoundValues[toDoValue1] += 1;
@@ -172,22 +172,28 @@ const getHomeBanner = async (req, res) => {
         });
       });
 
+      const thisWeekValuesList = [];
+      thisWeekValuesSet.forEach((thisWeekValue) => {
+        thisWeekValuesList.push({ name: thisWeekValue, level: 0 });
+      });
+
+      const thisWeekFoundValuesList = [];
       Object.keys(thisWeekFoundValues).forEach((value) => {
         if (thisWeekFoundValues[value] >= 7) {
-          thisWeekFoundValues[value] = 4;
+          thisWeekFoundValuesList.push({ name: value, level: 4 });
         } else if (thisWeekFoundValues[value] >= 5) {
-          thisWeekFoundValues[value] = 3;
+          thisWeekFoundValuesList.push({ name: value, level: 3 });
         } else if (thisWeekFoundValues[value] >= 3) {
-          thisWeekFoundValues[value] = 2;
+          thisWeekFoundValuesList.push({ name: value, level: 2 });
         } else if (thisWeekFoundValues[value] >= 1) {
-          thisWeekFoundValues[value] = 1;
+          thisWeekFoundValuesList.push({ name: value, level: 1 });
         } else {
-          thisWeekFoundValues[value] = 0;
+          thisWeekFoundValuesList.push({ name: value, level: 0 });
         }
       });
 
       // 1-1-1. 어제 찾은 별이 있는 경우
-      resJourneyComplete.starList = thisWeekFoundValues;
+      resJourneyComplete.starList = thisWeekFoundValuesList;
       if (yesterdayValueCnt > 0) {
         resJourneyComplete.mainText = `어제는\n${yesterdayValueCnt}개의 별을 발견했어요.`;
         return res.status(200).json(resJourneyComplete);
@@ -196,7 +202,7 @@ const getHomeBanner = async (req, res) => {
       // 1-1-2. 어제 찾은 별이 없는 경우
       resJourneyComplete.mainText = '오늘 별을 찾으러 떠나볼까요?';
       if (Object.keys(thisWeekFoundValues).length === 0) {
-        resJourneyComplete.starList = thisWeekValues;
+        resJourneyComplete.starList = thisWeekValuesList;
       }
       return res.status(200).json(resJourneyComplete);
     }
