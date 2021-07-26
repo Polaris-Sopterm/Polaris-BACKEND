@@ -132,8 +132,8 @@ const refreshLogin = async (req, res) => {
   let accessToken;
   try {
     const accessTokenData = {
-      userId: refreshToken.userId,
-      refreshTokenId: refreshToken.id,
+      userIdx: refreshToken.userIdx,
+      refreshTokenId: refreshToken.idx,
     };
     accessToken = auth.tokens.generateAccessToken(accessTokenData);
   } catch (e) {
