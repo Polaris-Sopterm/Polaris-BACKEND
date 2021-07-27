@@ -9,7 +9,7 @@
 ---
 ## 🍀 Database Modeling
 ---
-<img src="https://user-images.githubusercontent.com/49120090/125075043-13499500-e0f9-11eb-838c-630baab64fde.png" width="700" height="500">
+<img src="https://user-images.githubusercontent.com/49120090/127114974-5a719045-8d49-4ee6-92f3-84966b02ab9e.png" width="800" height="700">
 
 
 ## 📖 API DOCUMENTATION 
