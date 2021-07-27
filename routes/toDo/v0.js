@@ -291,7 +291,7 @@ const listToDoByDate = async (req, res) => {
   listToDoData.forEach((toDo) => {
     delete toDo.dataValues.journey;
     const utcDate = new Date(toDo.dataValues.date).toUTCString();
-    toDo.dataValues.date = moment(utcDate).locale('ko').format('M월 D일 dddd');
+    toDo.dataValues.date = moment(utcDate).format('YYYY-MM-DD');
     toDoList.push(toDo.dataValues);
   });
 
