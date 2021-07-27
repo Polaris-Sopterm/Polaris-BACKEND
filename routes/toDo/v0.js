@@ -1,3 +1,5 @@
+/* eslint-disable no-param-reassign,no-restricted-syntax */
+
 const express = require('express');
 const moment = require('moment');
 const asyncRoute = require('../../utils/asyncRoute');
@@ -263,18 +265,22 @@ const listToDoByDate = async (req, res) => {
 
   where.userIdx = currentUser.idx;
 
-  let listToDoByJourney;
+  let listToDoData;
   try {
-    listToDoByJourney = await Journey.findAll({
-      attributes: ['idx', 'year', 'month', 'weekNo', 'userIdx'],
-      where,
+    listToDoData = await ToDo.findAll({
+      attributes: ['idx', 'title', 'isTop', 'isDone', 'date', 'createdAt'],
       order: [
-        [ToDo, 'isTop', 'DESC'],
-        [ToDo, 'date', 'ASC'],
+        ['isTop', 'DESC'],
+        ['date', 'ASC'],
       ],
+      where: {
+        userIdx: currentUser.idx,
+      },
       include: [{
-        model: ToDo,
-        attributes: ['idx', 'title', 'isTop', 'isDone', 'date', 'createdAt'],
+        model: Journey,
+        attributes: ['idx', 'year', 'month', 'weekNo', 'userIdx'],
+        required: false,
+        where,
       }],
     });
   } catch (err) {
@@ -282,13 +288,11 @@ const listToDoByDate = async (req, res) => {
   }
 
   const toDoList = [];
-  listToDoByJourney.forEach((journey) => {
-    journey.toDos.forEach((toDo) => {
-      const utcDate = new Date(toDo.dataValues.date).toUTCString();
-      // eslint-disable-next-line no-param-reassign
-      toDo.dataValues.date = moment(utcDate).locale('ko').format('M월 D일 dddd');
-      toDoList.push(toDo);
-    });
+  listToDoData.forEach((toDo) => {
+    delete toDo.dataValues.journey;
+    const utcDate = new Date(toDo.dataValues.date).toUTCString();
+    toDo.dataValues.date = moment(utcDate).format('YYYY-MM-DD');
+    toDoList.push(toDo.dataValues);
   });
 
   const resBody = {};
@@ -302,7 +306,7 @@ const listToDoByDate = async (req, res) => {
   const resBody2 = {
     data: [],
   };
-  // eslint-disable-next-line no-restricted-syntax
+
   for (const key of Object.keys(resBody)) {
     resBody2.data.push({
       day: key,
