@@ -211,7 +211,7 @@ const getHomeBanner = async (req, res) => {
       0,
       bannerData.journey_incomplete.mainText.length - 1,
     );
-    resJourneyIncomplete.mainText = bannerData.journey_incomplete[randomInteger];
+    resJourneyIncomplete.mainText = bannerData.journey_incomplete.mainText[randomInteger];
     return res.status(200).json(resJourneyIncomplete);
   }
   // 2. 회고 미완료 &. 지난 여정이 있는 경우
