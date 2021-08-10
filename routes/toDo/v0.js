@@ -278,7 +278,7 @@ const listToDoByDate = async (req, res) => {
       },
       include: [{
         model: Journey,
-        attributes: ['idx', 'year', 'month', 'weekNo', 'userIdx'],
+        attributes: ['idx', 'year', 'month', 'weekNo', 'title', 'userIdx'],
         required: false,
         where,
       }],
@@ -286,10 +286,8 @@ const listToDoByDate = async (req, res) => {
   } catch (err) {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
   }
-
   const toDoList = [];
   listToDoData.forEach((toDo) => {
-    delete toDo.dataValues.journey;
     const utcDate = new Date(toDo.dataValues.date).toUTCString();
     toDo.dataValues.date = moment(utcDate).format('YYYY-MM-DD');
     toDoList.push(toDo.dataValues);
