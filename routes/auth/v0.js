@@ -60,7 +60,7 @@ const emailLogin = async (req, res) => {
   try {
     const accessTokenData = {
       userIdx: user.idx,
-      refreshTokenIdx: refreshToken.idx,
+      refreshTokenIdx: refreshToken.id,
     };
     accessToken = auth.tokens.generateAccessToken(accessTokenData);
   } catch (e) {
@@ -85,7 +85,6 @@ const emailLogin = async (req, res) => {
  */
 const logout = async (req, res) => {
   const { tokenData } = res.locals.auth;
-
   let refreshToken;
   try {
     refreshToken = await RefreshToken.findByPk(tokenData.refreshTokenIdx);
@@ -101,7 +100,9 @@ const logout = async (req, res) => {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
   }
 
-  return res.status(204).end();
+  return res.status(200).json({
+    isSuccess: true,
+  });
 };
 
 /**
@@ -133,7 +134,7 @@ const refreshLogin = async (req, res) => {
   try {
     const accessTokenData = {
       userIdx: refreshToken.userIdx,
-      refreshTokenId: refreshToken.idx,
+      refreshTokenId: refreshToken.id,
     };
     accessToken = auth.tokens.generateAccessToken(accessTokenData);
   } catch (e) {

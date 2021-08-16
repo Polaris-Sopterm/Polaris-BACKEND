@@ -123,7 +123,9 @@ const deleteUser = async (req, res) => {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
   }
 
-  return res.status(204).end();
+  return res.status(200).json({
+    isSuccess: true,
+  });
 };
 
 const router = express.Router();
