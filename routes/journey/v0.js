@@ -300,7 +300,9 @@ const deleteJourney = async (req, res) => {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
   }
 
-  return res.status(204).end();
+  return res.status(200).json({
+    isSuccess: true,
+  });
 };
 
 const router = express.Router();
