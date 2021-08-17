@@ -38,7 +38,42 @@ const createJourney = async (req, res) => {
   title = title.trim();
   const weekInfo = await getWeekOfMonth(new Date(date));
 
-  const journeyData = {
+  const transaction = await db.sequelize.transaction();
+  // 해당 주차의 기본 여정 여부 체크
+  let defaultJourney;
+  try {
+    defaultJourney = await Journey.findOne({
+      where: {
+        title: 'default',
+        userIdx: user.idx,
+        year: weekInfo.year,
+        month: weekInfo.month,
+        weekNo: weekInfo.weekNo,
+      },
+    });
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  // 해당 주차의 기본 여정이 없다면 생성
+  if (!defaultJourney) {
+    const defaultJourneyData = {
+      title: 'default',
+      year: weekInfo.year,
+      month: weekInfo.month,
+      weekNo: weekInfo.weekNo,
+      date,
+      userIdx: user.idx,
+    };
+
+    try {
+      await Journey.create(defaultJourneyData, { transaction });
+    } catch (err) {
+      throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+    }
+  }
+
+  const newJourneyData = {
     title,
     value1,
     value2,
@@ -51,8 +86,10 @@ const createJourney = async (req, res) => {
 
   let journeyResult;
   try {
-    journeyResult = await Journey.create(journeyData);
+    journeyResult = await Journey.create(newJourneyData, { transaction });
+    await transaction.commit();
   } catch (e) {
+    await transaction.rollback();
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
   }
 
