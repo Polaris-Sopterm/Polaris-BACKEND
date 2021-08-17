@@ -29,11 +29,10 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       value1: {
-        allowNull: false,
+        allowNull: true,
         type: DataTypes.ENUM(Object.values(VALUES)),
         validate: {
           isIn: [Object.values(VALUES)],
-          notNull: true,
         },
       },
       value2: {
