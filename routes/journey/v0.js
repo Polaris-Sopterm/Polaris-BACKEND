@@ -238,9 +238,9 @@ const getJourneyList = async (req, res) => {
     journeyMonth = weekInfo.month;
     journeyWeek = weekInfo.weekNo;
   } else {
-    journeyYear = year;
-    journeyMonth = month;
-    journeyWeek = weekNo;
+    journeyYear = parseInt(year, 10);
+    journeyMonth = parseInt(month, 10);
+    journeyWeek = parseInt(weekNo, 10);
   }
 
   let journeys;
