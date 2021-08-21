@@ -25,8 +25,9 @@ const createToDo = async (req, res) => {
   const { user: currentUser } = res.locals.auth;
 
   const {
-    title, date, journeyTitle, journeyIdx, isTop,
+    title, date, isTop,
   } = req.body;
+  let { journeyIdx } = req.body;
 
   if (!date) throw new HttpBadRequest(Errors.TODO.DATE_MISSING);
   if (!title) throw new HttpBadRequest(Errors.TODO.TITLE_MISSING);
@@ -36,7 +37,26 @@ const createToDo = async (req, res) => {
 
   const transaction = await db.sequelize.transaction();
 
-  if (journeyTitle === 'default') {
+  if (journeyIdx) {
+    let journey;
+    try {
+      journey = await Journey.findByPk(journeyIdx, {
+        attributes: ['idx', 'year', 'month', 'weekNo'],
+      });
+    } catch (err) {
+      throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+    }
+
+    if (!journey) throw new HttpNotFound(Errors.JOURNEY.NOT_FOUND);
+
+    if (
+      journey.year !== weekInfo.year
+      || journey.month !== weekInfo.month
+      || journey.weekNo !== weekInfo.weekNo
+    ) {
+      throw new HttpBadRequest(Errors.TODO.INCORRECT_WEEK_NO);
+    }
+  } else {
     // 해당 주차의 기본 여정 여부 체크
     let defaultJourney;
     try {
@@ -70,35 +90,12 @@ const createToDo = async (req, res) => {
       };
 
       try {
-        await Journey.create(defaultJourneyData, { transaction });
+        defaultJourney = await Journey.create(defaultJourneyData, { transaction });
       } catch (err) {
         throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
       }
     }
-  } else if (!journeyTitle) {
-    // 기본 여정 선택이 아닌데 여정의 idx 없는 경우 에러 처리
-    if (!journeyIdx) throw new HttpBadRequest(Errors.TODO.JOURNEY_IDX_MISSING);
-  }
-
-  if (journeyIdx) {
-    let journey;
-    try {
-      journey = await Journey.findByPk(journeyIdx, {
-        attributes: ['idx', 'year', 'month', 'weekNo'],
-      });
-    } catch (err) {
-      throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
-    }
-
-    if (!journey) throw new HttpNotFound(Errors.JOURNEY.NOT_FOUND);
-
-    if (
-      journey.year !== weekInfo.year
-      || journey.month !== weekInfo.month
-      || journey.weekNo !== weekInfo.weekNo
-    ) {
-      throw new HttpBadRequest(Errors.TODO.INCORRECT_WEEK_NO);
-    }
+    journeyIdx = defaultJourney.idx;
   }
 
   const toDoData = {
