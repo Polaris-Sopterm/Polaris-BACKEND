@@ -105,6 +105,32 @@ const checkEmail = async (req, res) => {
  * @param {Response} res
  * @returns {Promise<*>}
  */
+const updateUser = async (req, res) => {
+  const { user: currentUser } = res.locals.auth;
+
+  const { nickname } = req.body;
+
+  if (nickname) {
+    currentUser.nickname = nickname;
+  }
+
+  let user;
+  try {
+    user = await currentUser.save();
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  return res
+    .status(200)
+    .json(user);
+};
+
+/**
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<*>}
+ */
 const deleteUser = async (req, res) => {
   const { user: currentUser } = res.locals.auth;
 
@@ -134,11 +160,14 @@ router.post('/', asyncRoute(createUser));
 
 router.post('/checkEmail', asyncRoute(checkEmail));
 
+router.patch('/me', auth.authenticate({}), asyncRoute(updateUser));
+
 router.delete('/', auth.authenticate({}), asyncRoute(deleteUser));
 
 module.exports = {
   router,
   createUser,
   checkEmail,
+  updateUser,
   deleteUser,
 };
