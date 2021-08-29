@@ -236,7 +236,7 @@ const listToDoByJourneys = async (req, res) => {
     journey.toDos.forEach((toDo) => {
       const utcDate = new Date(toDo.dataValues.date).toUTCString();
       // eslint-disable-next-line no-param-reassign
-      toDo.dataValues.date = moment(utcDate).locale('ko').format('M월 D일 dddd');
+      toDo.dataValues.date = moment(utcDate).format('YYYY-MM-DD');
     });
   });
 
