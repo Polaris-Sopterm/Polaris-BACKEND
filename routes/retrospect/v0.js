@@ -50,8 +50,14 @@ const listValues = async (req, res) => {
     }
   }
 
-  const set = new Set(values);
-  const response = [...set];
+  const response = {};
+  values.forEach((data) => {
+    if (response[data]) {
+      response[data] += 1;
+    } else {
+      response[data] = 1;
+    }
+  });
 
   return res
     .status(200)
