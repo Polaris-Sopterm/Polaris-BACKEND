@@ -23,20 +23,19 @@ const listValues = async (req, res) => {
     year, month, weekNo,
   } = req.query;
 
-  if (!(year && month && weekNo)) {
-    throw new HttpBadRequest(Errors.JOURNEY.DATE_MISSING);
+  const where = {};
+  if (year && month && weekNo) {
+    where.year = year;
+    where.month = month;
+    where.weekNo = weekNo;
   }
+  where.userIdx = currentUser.idx;
 
   let journey;
   try {
     journey = await Journey.findAll({
       attributes: ['value1', 'value2'],
-      where: {
-        year,
-        month,
-        weekNo,
-        userIdx: currentUser.idx,
-      },
+      where,
     });
   } catch (err) {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
@@ -44,7 +43,9 @@ const listValues = async (req, res) => {
 
   const values = [];
   for (let i = 0; i < journey.length; i += 1) {
-    values.push(journey[i].dataValues.value1);
+    if (journey[i].dataValues.value1) {
+      values.push(journey[i].dataValues.value1);
+    }
     if (journey[i].dataValues.value2) {
       values.push(journey[i].dataValues.value2);
     }
