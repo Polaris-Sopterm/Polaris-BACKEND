@@ -125,7 +125,7 @@ const createRetrospect = async (req, res) => {
   });
 
   const {
-    health, happy, challenge, moderation, emotion, need,
+    health, happy, challenge, moderation, emoticon, need,
   } = value;
 
   if ((health || happy || challenge || moderation) > 5
@@ -134,7 +134,7 @@ const createRetrospect = async (req, res) => {
     throw new HttpBadRequest(Errors.RETROSPECT.DEGREE_INCORRECT);
   }
 
-  emotion.forEach((v) => {
+  emoticon.forEach((v) => {
     if (v && !Object.values(Retrospect.EMOTION).includes(v)) {
       throw new HttpBadRequest(Errors.RETROSPECT.EMOTION_INCORRECT);
     }
