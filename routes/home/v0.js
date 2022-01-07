@@ -33,6 +33,7 @@ const getHomeBanner = async (req, res) => {
     case: 'journey_complete',
     starList: [],
     mainText: '',
+    boldText: '',
     bannerTitle: null,
     bannerText: null,
     buttonText: null,
@@ -40,8 +41,9 @@ const getHomeBanner = async (req, res) => {
 
   const resJourneyIncomplete = {
     case: 'journey_incomplete',
-    starList: {},
+    starList: [],
     mainText: '',
+    boldText: '',
     bannerTitle: bannerData.journey_incomplete.bannerTitle,
     bannerText: bannerData.journey_incomplete.bannerText,
     buttonText: bannerData.journey_incomplete.buttonText,
@@ -49,8 +51,9 @@ const getHomeBanner = async (req, res) => {
 
   const resRetrospect = {
     case: 'retrospect',
-    starList: {},
+    starList: [],
     mainText: '',
+    boldText: '',
     bannerTitle: '',
     bannerText: '',
     buttonText: bannerData.retrospect.buttonText,
@@ -132,11 +135,13 @@ const getHomeBanner = async (req, res) => {
 
   // 1. 회고 완료  or 건너뛰기 한 경우 or {회고 미완료&지난 여정이 없는 경우}
   if (
-    lastRetrospect || isSkipped === 'true' || (!lastRetrospect && !lastJourney)
+    lastRetrospect
+    || isSkipped === 'true'
+    || (!lastRetrospect && !lastJourney)
   ) {
     // 1-1. 이번주 여정 작성 완료
     if (thisWeekJourney.length !== 0) {
-      const thisWeekValues = {};
+      const thisWeekValuesSet = new Set();
       const thisWeekFoundValues = {};
       let yesterdayValueCnt = 0;
       const yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
@@ -145,8 +150,8 @@ const getHomeBanner = async (req, res) => {
           const toDoValue1 = journeys.dataValues.value1;
           const toDoValue2 = journeys.dataValues.value2;
 
-          thisWeekValues[toDoValue1] = 0;
-          if (thisWeekValues[toDoValue2]) thisWeekValues[toDoValue2] = 0;
+          thisWeekValuesSet.add(toDoValue1);
+          thisWeekValuesSet.add(toDoValue2);
           if (toDo.dataValues.isDone) {
             if (thisWeekFoundValues[toDoValue1]) {
               thisWeekFoundValues[toDoValue1] += 1;
@@ -172,31 +177,39 @@ const getHomeBanner = async (req, res) => {
         });
       });
 
+      const thisWeekValuesList = [];
+      thisWeekValuesSet.forEach((thisWeekValue) => {
+        thisWeekValuesList.push({ name: thisWeekValue, level: 0 });
+      });
+
+      const thisWeekFoundValuesList = [];
       Object.keys(thisWeekFoundValues).forEach((value) => {
         if (thisWeekFoundValues[value] >= 7) {
-          thisWeekFoundValues[value] = 4;
+          thisWeekFoundValuesList.push({ name: value, level: 4 });
         } else if (thisWeekFoundValues[value] >= 5) {
-          thisWeekFoundValues[value] = 3;
+          thisWeekFoundValuesList.push({ name: value, level: 3 });
         } else if (thisWeekFoundValues[value] >= 3) {
-          thisWeekFoundValues[value] = 2;
+          thisWeekFoundValuesList.push({ name: value, level: 2 });
         } else if (thisWeekFoundValues[value] >= 1) {
-          thisWeekFoundValues[value] = 1;
+          thisWeekFoundValuesList.push({ name: value, level: 1 });
         } else {
-          thisWeekFoundValues[value] = 0;
+          thisWeekFoundValuesList.push({ name: value, level: 0 });
         }
       });
 
       // 1-1-1. 어제 찾은 별이 있는 경우
-      resJourneyComplete.starList = thisWeekFoundValues;
+      resJourneyComplete.starList = thisWeekFoundValuesList;
       if (yesterdayValueCnt > 0) {
         resJourneyComplete.mainText = `어제는\n${yesterdayValueCnt}개의 별을 발견했어요.`;
+        resJourneyComplete.boldText = `${yesterdayValueCnt}개의 별`;
         return res.status(200).json(resJourneyComplete);
       }
 
       // 1-1-2. 어제 찾은 별이 없는 경우
-      resJourneyComplete.mainText = '오늘 별을 찾으러 떠나볼까요?';
+      resJourneyComplete.mainText = '오늘 별을 찾으러\n떠나볼까요?';
+      resJourneyComplete.boldText = '별을 찾으러';
       if (Object.keys(thisWeekFoundValues).length === 0) {
-        resJourneyComplete.starList = thisWeekValues;
+        resJourneyComplete.starList = thisWeekValuesList;
       }
       return res.status(200).json(resJourneyComplete);
     }
@@ -205,7 +218,8 @@ const getHomeBanner = async (req, res) => {
       0,
       bannerData.journey_incomplete.mainText.length - 1,
     );
-    resJourneyIncomplete.mainText = bannerData.journey_incomplete[randomInteger];
+    resJourneyIncomplete.mainText = bannerData.journey_incomplete.mainText[randomInteger];
+    resJourneyIncomplete.boldText = bannerData.journey_incomplete.boldText[randomInteger];
     return res.status(200).json(resJourneyIncomplete);
   }
   // 2. 회고 미완료 &. 지난 여정이 있는 경우
@@ -241,7 +255,8 @@ const getHomeBanner = async (req, res) => {
       });
     });
 
-    resRetrospect.mainText = '때로는\n휴식도 도움이 된답니다.';
+    resRetrospect.mainText = '때로는\n휴식도 도움이 됩니다.';
+    resRetrospect.boldText = '때로는';
     resRetrospect.bannerTitle = bannerData.retrospect.under60.bannerTitle;
     resRetrospect.bannerText = bannerData.retrospect.under60.bannerText;
     // 2-1. 최근 여정 완료한 일 / 전체 한 일 >= 60
@@ -250,7 +265,8 @@ const getHomeBanner = async (req, res) => {
         0,
         bannerData.retrospect.over60.mainText.length - 1,
       );
-      resRetrospect.mainText = `${lastJourney.dataValues.month}월 ${lastJourney.dataValues.weekNo}째주\n${bannerData.retrospect.over60.mainText[randomInteger]}`;
+      resRetrospect.mainText = `${lastJourney.dataValues.month}월 ${lastJourney.dataValues.weekNo}째주${bannerData.retrospect.over60.mainText[randomInteger]}`;
+      resRetrospect.boldText = `${lastJourney.dataValues.month}월 ${lastJourney.dataValues.weekNo}째주`;
       resRetrospect.bannerTitle = bannerData.retrospect.over60.bannerTitle;
       resRetrospect.bannerText = bannerData.retrospect.over60.bannerText;
     }
@@ -262,7 +278,11 @@ const getHomeBanner = async (req, res) => {
 const router = express.Router();
 
 // 홈 화면 배너 조회
-router.get('/banner/:isSkipped', auth.authenticate({}), asyncRoute(getHomeBanner));
+router.get(
+  '/banner/:isSkipped',
+  auth.authenticate({}),
+  asyncRoute(getHomeBanner),
+);
 
 module.exports = {
   router,

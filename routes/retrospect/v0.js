@@ -23,20 +23,19 @@ const listValues = async (req, res) => {
     year, month, weekNo,
   } = req.query;
 
-  if (!(year && month && weekNo)) {
-    throw new HttpBadRequest(Errors.JOURNEY.DATE_MISSING);
+  const where = {};
+  if (year && month && weekNo) {
+    where.year = year;
+    where.month = month;
+    where.weekNo = weekNo;
   }
+  where.userIdx = currentUser.idx;
 
   let journey;
   try {
     journey = await Journey.findAll({
       attributes: ['value1', 'value2'],
-      where: {
-        year,
-        month,
-        weekNo,
-        userIdx: currentUser.idx,
-      },
+      where,
     });
   } catch (err) {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
@@ -44,14 +43,22 @@ const listValues = async (req, res) => {
 
   const values = [];
   for (let i = 0; i < journey.length; i += 1) {
-    values.push(journey[i].dataValues.value1);
+    if (journey[i].dataValues.value1) {
+      values.push(journey[i].dataValues.value1);
+    }
     if (journey[i].dataValues.value2) {
       values.push(journey[i].dataValues.value2);
     }
   }
 
-  const set = new Set(values);
-  const response = [...set];
+  const response = {};
+  values.forEach((data) => {
+    if (response[data]) {
+      response[data] += 1;
+    } else {
+      response[data] = 1;
+    }
+  });
 
   return res
     .status(200)
@@ -118,7 +125,7 @@ const createRetrospect = async (req, res) => {
   });
 
   const {
-    health, happy, challenge, moderation, emotion, need,
+    health, happy, challenge, moderation, emoticon, need,
   } = value;
 
   if ((health || happy || challenge || moderation) > 5
@@ -127,7 +134,7 @@ const createRetrospect = async (req, res) => {
     throw new HttpBadRequest(Errors.RETROSPECT.DEGREE_INCORRECT);
   }
 
-  emotion.forEach((v) => {
+  emoticon.forEach((v) => {
     if (v && !Object.values(Retrospect.EMOTION).includes(v)) {
       throw new HttpBadRequest(Errors.RETROSPECT.EMOTION_INCORRECT);
     }

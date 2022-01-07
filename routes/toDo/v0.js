@@ -1,3 +1,5 @@
+/* eslint-disable no-param-reassign,no-restricted-syntax */
+
 const express = require('express');
 const moment = require('moment');
 const asyncRoute = require('../../utils/asyncRoute');
@@ -23,8 +25,9 @@ const createToDo = async (req, res) => {
   const { user: currentUser } = res.locals.auth;
 
   const {
-    title, date, journeyTitle, journeyIdx, isTop,
+    title, date, isTop,
   } = req.body;
+  let { journeyIdx } = req.body;
 
   if (!date) throw new HttpBadRequest(Errors.TODO.DATE_MISSING);
   if (!title) throw new HttpBadRequest(Errors.TODO.TITLE_MISSING);
@@ -34,7 +37,26 @@ const createToDo = async (req, res) => {
 
   const transaction = await db.sequelize.transaction();
 
-  if (journeyTitle === 'default') {
+  if (journeyIdx) {
+    let journey;
+    try {
+      journey = await Journey.findByPk(journeyIdx, {
+        attributes: ['idx', 'year', 'month', 'weekNo'],
+      });
+    } catch (err) {
+      throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+    }
+
+    if (!journey) throw new HttpNotFound(Errors.JOURNEY.NOT_FOUND);
+
+    if (
+      journey.year !== weekInfo.year
+      || journey.month !== weekInfo.month
+      || journey.weekNo !== weekInfo.weekNo
+    ) {
+      throw new HttpBadRequest(Errors.TODO.INCORRECT_WEEK_NO);
+    }
+  } else {
     // 해당 주차의 기본 여정 여부 체크
     let defaultJourney;
     try {
@@ -68,35 +90,12 @@ const createToDo = async (req, res) => {
       };
 
       try {
-        await Journey.create(defaultJourneyData, { transaction });
+        defaultJourney = await Journey.create(defaultJourneyData, { transaction });
       } catch (err) {
         throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
       }
     }
-  } else if (!journeyTitle) {
-    // 기본 여정 선택이 아닌데 여정의 idx 없는 경우 에러 처리
-    if (!journeyIdx) throw new HttpBadRequest(Errors.TODO.JOURNEY_IDX_MISSING);
-  }
-
-  if (journeyIdx) {
-    let journey;
-    try {
-      journey = await Journey.findByPk(journeyIdx, {
-        attributes: ['idx', 'year', 'month', 'weekNo'],
-      });
-    } catch (err) {
-      throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
-    }
-
-    if (!journey) throw new HttpNotFound(Errors.JOURNEY.NOT_FOUND);
-
-    if (
-      journey.year !== weekInfo.year
-      || journey.month !== weekInfo.month
-      || journey.weekNo !== weekInfo.weekNo
-    ) {
-      throw new HttpBadRequest(Errors.TODO.INCORRECT_WEEK_NO);
-    }
+    journeyIdx = defaultJourney.idx;
   }
 
   const toDoData = {
@@ -237,7 +236,7 @@ const listToDoByJourneys = async (req, res) => {
     journey.toDos.forEach((toDo) => {
       const utcDate = new Date(toDo.dataValues.date).toUTCString();
       // eslint-disable-next-line no-param-reassign
-      toDo.dataValues.date = moment(utcDate).locale('ko').format('M월 D일 dddd');
+      toDo.dataValues.date = moment(utcDate).format('YYYY-MM-DD');
     });
   });
 
@@ -263,32 +262,32 @@ const listToDoByDate = async (req, res) => {
 
   where.userIdx = currentUser.idx;
 
-  let listToDoByJourney;
+  let listToDoData;
   try {
-    listToDoByJourney = await Journey.findAll({
-      attributes: ['idx', 'year', 'month', 'weekNo', 'userIdx'],
-      where,
+    listToDoData = await ToDo.findAll({
+      attributes: ['idx', 'title', 'isTop', 'isDone', 'date', 'createdAt'],
       order: [
-        [ToDo, 'isTop', 'DESC'],
-        [ToDo, 'date', 'ASC'],
+        ['isTop', 'DESC'],
+        ['date', 'ASC'],
       ],
+      where: {
+        userIdx: currentUser.idx,
+      },
       include: [{
-        model: ToDo,
-        attributes: ['idx', 'title', 'isTop', 'isDone', 'date', 'createdAt'],
+        model: Journey,
+        attributes: ['idx', 'year', 'month', 'weekNo', 'title', 'userIdx'],
+        required: false,
+        where,
       }],
     });
   } catch (err) {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
   }
-
   const toDoList = [];
-  listToDoByJourney.forEach((journey) => {
-    journey.toDos.forEach((toDo) => {
-      const utcDate = new Date(toDo.dataValues.date).toUTCString();
-      // eslint-disable-next-line no-param-reassign
-      toDo.dataValues.date = moment(utcDate).locale('ko').format('M월 D일 dddd');
-      toDoList.push(toDo);
-    });
+  listToDoData.forEach((toDo) => {
+    const utcDate = new Date(toDo.dataValues.date).toUTCString();
+    toDo.dataValues.date = moment(utcDate).format('YYYY-MM-DD');
+    toDoList.push(toDo.dataValues);
   });
 
   const resBody = {};
@@ -302,7 +301,7 @@ const listToDoByDate = async (req, res) => {
   const resBody2 = {
     data: [],
   };
-  // eslint-disable-next-line no-restricted-syntax
+
   for (const key of Object.keys(resBody)) {
     resBody2.data.push({
       day: key,
@@ -343,7 +342,9 @@ const deleteToDo = async (req, res) => {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
   }
 
-  return res.status(204).end();
+  return res.status(200).json({
+    isSuccess: true,
+  });
 };
 
 const router = express.Router();
