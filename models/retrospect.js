@@ -6,7 +6,7 @@ const EMOTION = {
   EASY: '무난',
   JOY: '기쁨',
   ANGRY: '화남',
-  REGRETFUL: '아쉬운',
+  REGRETFUL: '아쉬움',
   SATISFACTION: '만족',
 };
 Object.freeze(EMOTION);
