@@ -177,7 +177,7 @@ const createRetrospect = async (req, res) => {
 const getRetrospect = async (req, res) => {
   const { user: currentUser } = res.locals.auth;
 
-  const { year, month, weekNo } = req.params;
+  const { year, month, weekNo } = req.query;
 
   let retrospect;
   try {
@@ -206,7 +206,7 @@ router.get('/value', auth.authenticate({}), asyncRoute(listValues));
 
 router.post('/', auth.authenticate({}), asyncRoute(createRetrospect));
 
-router.get('/:year/:month/:weeNo', auth.authenticate({}), asyncRoute(getRetrospect));
+router.get('/', auth.authenticate({}), asyncRoute(getRetrospect));
 
 module.exports = {
   router,
