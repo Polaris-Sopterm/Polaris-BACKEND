@@ -177,7 +177,7 @@ const createRetrospect = async (req, res) => {
 const getRetrospect = async (req, res) => {
   const { user: currentUser } = res.locals.auth;
 
-  const { year, month, weekNo } = req.params;
+  const { year, month, weekNo } = req.query;
 
   let retrospect;
   try {
