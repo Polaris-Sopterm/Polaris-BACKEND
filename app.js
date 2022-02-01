@@ -11,6 +11,7 @@ const userRouter = require('./routes/user');
 const journeyRouter = require('./routes/journey');
 const retrospectRouter = require('./routes/retrospect');
 const homeRouter = require('./routes/home');
+const weekNoRouter = require('./routes/weekNo');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/user/v0', userRouter.v0.router);
 app.use('/journey/v0', journeyRouter.v0.router);
 app.use('/retrospect/v0', retrospectRouter.v0.router);
 app.use('/home/v0', homeRouter.v0.router);
+app.use('/weekNo/v0', weekNoRouter.v0.router);
 
 app.use(errorHandler);
 
