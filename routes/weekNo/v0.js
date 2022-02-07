@@ -33,11 +33,27 @@ const lastMonthWeekNo = async (req, res) => {
   if (!month) throw new HttpBadRequest(Errors.WEEK_NO.MONTH_MISSING);
 
   let weekNo;
+  let lastDate;
+  let lastDay;
+  let date;
   try {
-    const lastDate = new Date(year, month, 0);
-    const date = `${year}-${month}-${lastDate.getDate()}`;
+    lastDate = new Date(year, month, 0);
+    lastDay = lastDate.getDate();
+    date = `${year}-${month}-${lastDay}`;
 
     weekNo = await getWeekOfMonth(new Date(date));
+
+    if (weekNo.weekNo === 1) {
+      while (weekNo.weekNo === 1) {
+        lastDay -= 1;
+        date = `${year}-${month}-${lastDay}`;
+
+        // eslint-disable-next-line no-await-in-loop
+        weekNo = await getWeekOfMonth(new Date(date));
+
+        if (weekNo.weekNo !== 1) break;
+      }
+    }
   } catch (e) {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
   }
