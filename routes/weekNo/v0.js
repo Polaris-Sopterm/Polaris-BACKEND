@@ -37,7 +37,7 @@ const lastMonthWeekNo = async (req, res) => {
     const lastDate = new Date(year, month, 0);
     const date = `${year}-${month}-${lastDate.getDate()}`;
 
-    weekNo = await getWeekOfMonth(date);
+    weekNo = await getWeekOfMonth(new Date(date));
   } catch (e) {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
   }
