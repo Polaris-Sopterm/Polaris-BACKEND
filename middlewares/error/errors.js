@@ -133,16 +133,6 @@ const errors = {
       message: '건너뛰기 여부가 없습니다.',
     },
   },
-  WEEK_NO: {
-    YEAR_MISSING: {
-      code: 31,
-      message: '년도가 없습니다.',
-    },
-    MONTH_MISSING: {
-      code: 32,
-      message: '달이 없습니다.',
-    },
-  },
 };
 
 module.exports = errors;
