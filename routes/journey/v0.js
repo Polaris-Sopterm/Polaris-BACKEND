@@ -23,10 +23,16 @@ const { Journey, ToDo } = db;
 const createJourney = async (req, res) => {
   const { user } = res.locals.auth;
   let { title } = req.body;
-  const { value1, value2, date } = req.body;
+  const {
+    value1,
+    value2,
+    year,
+    month,
+    weekNo,
+  } = req.body;
 
   if (!title) throw new HttpBadRequest(Errors.JOURNEY.TITLE_MISSING);
-  if (!date) throw new HttpBadRequest(Errors.JOURNEY.DATE_MISSING);
+  if (!(year || month || weekNo)) throw new HttpBadRequest(Errors.JOURNEY.DATE_MISSING);
   if (!value1) throw new HttpBadRequest(Errors.JOURNEY.VALUES_MISSING);
 
   [value1, value2].forEach((value) => {
@@ -36,7 +42,6 @@ const createJourney = async (req, res) => {
   });
 
   title = title.trim();
-  const weekInfo = await getWeekOfMonth(new Date(date));
 
   const transaction = await db.sequelize.transaction();
   // 해당 주차의 기본 여정 여부 체크
@@ -46,9 +51,9 @@ const createJourney = async (req, res) => {
       where: {
         title: 'default',
         userIdx: user.idx,
-        year: weekInfo.year,
-        month: weekInfo.month,
-        weekNo: weekInfo.weekNo,
+        year,
+        month,
+        weekNo,
       },
     });
   } catch (err) {
@@ -59,10 +64,10 @@ const createJourney = async (req, res) => {
   if (!defaultJourney) {
     const defaultJourneyData = {
       title: 'default',
-      year: weekInfo.year,
-      month: weekInfo.month,
-      weekNo: weekInfo.weekNo,
-      date,
+      year,
+      month,
+      weekNo,
+      date: new Date(),
       userIdx: user.idx,
     };
 
@@ -77,10 +82,10 @@ const createJourney = async (req, res) => {
     title,
     value1,
     value2,
-    year: weekInfo.year,
-    month: weekInfo.month,
-    weekNo: weekInfo.weekNo,
-    date,
+    year,
+    month,
+    weekNo,
+    date: new Date(),
     userIdx: user.idx,
   };
 
