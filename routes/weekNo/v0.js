@@ -14,9 +14,14 @@ const { Errors, HttpInternalServerError } = require('../../middlewares/error');
 const getWeekNo = async (req, res) => {
   const { date } = req.params;
 
-  const weekNo = await getWeekOfMonth(new Date(date));
+  const newDate = new Date(date);
+  const year = newDate.getFullYear();
+  const month = newDate.getMonth() + 1;
+  const weekNo = await getWeekOfMonth(newDate);
 
   const resBody = {
+    year,
+    month,
     weekNo: weekNo.weekNo,
   };
 
