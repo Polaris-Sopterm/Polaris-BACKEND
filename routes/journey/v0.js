@@ -257,6 +257,7 @@ const getJourneyList = async (req, res) => {
         attributes: ['idx', 'title', 'date', 'isTop', 'isDone'],
       },
       order: [
+        ['idx', 'DESC'],
         [{ model: ToDo }, 'isTop', 'DESC'],
         [{ model: ToDo }, 'date', 'ASC'],
       ],
