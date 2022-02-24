@@ -146,35 +146,35 @@ const getHomeBanner = async (req, res) => {
       let yesterdayValueCnt = 0;
       const yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
       thisWeekJourney.forEach((journeys) => {
-        journeys.dataValues.toDos.forEach((toDo) => {
-          const toDoValue1 = journeys.dataValues.value1;
-          const toDoValue2 = journeys.dataValues.value2;
+        if (journeys.dataValues.title !== 'default') {
+          journeys.dataValues.toDos.forEach((toDo) => {
+            const toDoValue1 = journeys.dataValues.value1;
+            const toDoValue2 = journeys.dataValues.value2;
 
-          thisWeekValuesSet.add(toDoValue1);
-          thisWeekValuesSet.add(toDoValue2);
-          if (toDo.dataValues.isDone) {
-            if (thisWeekFoundValues[toDoValue1]) {
-              thisWeekFoundValues[toDoValue1] += 1;
-            } else {
-              thisWeekFoundValues[toDoValue1] = 1;
-            }
-
-            if (toDoValue2) {
-              if (thisWeekFoundValues[toDoValue2]) {
-                thisWeekFoundValues[toDoValue2] += 1;
+            thisWeekValuesSet.add(toDoValue1);
+            if (toDoValue2) thisWeekValuesSet.add(toDoValue2);
+            if (toDo.dataValues.isDone) {
+              if (thisWeekFoundValues[toDoValue1]) {
+                thisWeekFoundValues[toDoValue1] += 1;
               } else {
-                thisWeekFoundValues[toDoValue2] = 1;
+                thisWeekFoundValues[toDoValue1] = 1;
+              }
+
+              if (toDoValue2) {
+                if (thisWeekFoundValues[toDoValue2]) {
+                  thisWeekFoundValues[toDoValue2] += 1;
+                } else {
+                  thisWeekFoundValues[toDoValue2] = 1;
+                }
+              }
+
+              if (moment(toDo.dataValues.isDone).format('YYYY-MM-DD') === yesterday) {
+                yesterdayValueCnt += 1;
+                if (toDoValue2) yesterdayValueCnt += 1;
               }
             }
-
-            if (
-              moment(toDo.dataValues.isDone).format('YYYY-MM-DD') === yesterday
-            ) {
-              yesterdayValueCnt += 1;
-              if (toDoValue2) yesterdayValueCnt += 1;
-            }
-          }
-        });
+          });
+        }
       });
 
       const thisWeekValuesList = [];
