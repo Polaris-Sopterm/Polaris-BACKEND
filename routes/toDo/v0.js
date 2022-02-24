@@ -6,7 +6,6 @@ const asyncRoute = require('../../utils/asyncRoute');
 const db = require('../../models');
 const auth = require('../../middlewares/auth');
 const { getWeekOfMonth } = require('../../utils/weekCalculation');
-const { getRandomValue } = require('../../utils/random');
 const {
   Errors,
   HttpBadRequest,
@@ -75,13 +74,8 @@ const createToDo = async (req, res) => {
 
     // 해당 주차의 기본 여정이 없다면 생성
     if (!defaultJourney) {
-      const value1 = await getRandomValue(Object.values(Journey.VALUES), null);
-      const value2 = await getRandomValue(Object.values(Journey.VALUES), value1);
-
       const defaultJourneyData = {
         title: 'default',
-        value1,
-        value2,
         year: weekInfo.year,
         month: weekInfo.month,
         weekNo: weekInfo.weekNo,
