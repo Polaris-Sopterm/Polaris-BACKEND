@@ -1,5 +1,5 @@
-// 해당 날짜가 월의 몇주차인지 계산
 /**
+ * 해당 날짜가 월의 몇주차인지 계산
  * @param {Date} journeyDate
  * @returns {{month: number, year: number, weekNo: number}|{month: number, year: number, weekNo}|*|
  * {month: number, year: number, weekNo: number}}
@@ -41,6 +41,25 @@ const getWeekOfMonth = (journeyDate) => {
   return { year, month, weekNo: Math.ceil((date + firstDateDay - 1) / 7) };
 };
 
+/**
+ * 해당 주에 포함된 목요일 날짜 계산
+ * @param {number} year
+ * @param {number} month
+ * @param {number} weekNo
+ * @returns {thursdayDate: number, thursdayMonth: number, thursdayYear: number}
+ */
+const getThursdayFromWeekNo = (year, month, weekNo) => {
+  const firstDate = new Date(year, month - 1, 1);
+
+  // 월:1, 화:2, ..., 일:7
+  const firstDateDay = firstDate.getDay() === 0 ? 7 : firstDate.getDay();
+
+  const firstThursdayDate = firstDateDay <= 4 ? 1 + (4 - firstDateDay) : 1 - (firstDateDay - 4) + 7;
+
+  return firstThursdayDate + (weekNo - 1) * 7;
+};
+
 module.exports = {
   getWeekOfMonth,
+  getThursdayFromWeekNo,
 };
