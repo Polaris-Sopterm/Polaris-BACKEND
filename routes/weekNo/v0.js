@@ -15,14 +15,12 @@ const getWeekNo = async (req, res) => {
   const { date } = req.params;
 
   const newDate = new Date(date);
-  const year = newDate.getFullYear();
-  const month = newDate.getMonth() + 1;
-  const weekNo = await getWeekOfMonth(newDate);
+  const weekInfo = await getWeekOfMonth(newDate);
 
   const resBody = {
-    year,
-    month,
-    weekNo: weekNo.weekNo,
+    year: weekInfo.year,
+    month: weekInfo.month,
+    weekNo: weekInfo.weekNo,
   };
 
   return res.status(200).json(resBody);
