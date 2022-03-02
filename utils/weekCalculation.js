@@ -14,9 +14,10 @@ const getWeekOfMonth = (journeyDate) => {
 
   // 월:1, 화:2, ..., 일:7
   const firstDateDay = firstDate.getDay() === 0 ? 7 : firstDate.getDay();
+  const lastDateDay = lastDate.getDay() === 0 ? 7 : lastDate.getDay();
 
   // 월의 마지막 날이 포함된 주가 목요일을 포함하지 않아 다음 달의 첫째 주가 되는 경우
-  if (lastDate.getDay() < 4 && date > lastDate.getDate() - lastDate.getDay()) {
+  if (lastDateDay < 4 && date > lastDate.getDate() - lastDateDay) {
     return { year, month: month + 1, weekNo: 1 };
   }
 
