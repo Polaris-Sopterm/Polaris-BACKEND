@@ -3,7 +3,7 @@ const moment = require('moment');
 const asyncRoute = require('../../utils/asyncRoute');
 const db = require('../../models');
 const auth = require('../../middlewares/auth');
-const { getWeekOfMonth } = require('../../utils/weekCalculation');
+const { getWeekOfMonth, getThursdayFromWeekNo } = require('../../utils/weekCalculation');
 const { getRandomValue } = require('../../utils/random');
 const {
   Errors,
@@ -67,7 +67,7 @@ const createJourney = async (req, res) => {
       year,
       month,
       weekNo,
-      date: new Date(),
+      date: new Date(`${year}-${month}-${getThursdayFromWeekNo(year, month, weekNo)}`),
       userIdx: user.idx,
     };
 
@@ -85,7 +85,7 @@ const createJourney = async (req, res) => {
     year,
     month,
     weekNo,
-    date: new Date(),
+    date: new Date(`${year}-${month}-${getThursdayFromWeekNo(year, month, weekNo)}`),
     userIdx: user.idx,
   };
 
@@ -257,6 +257,7 @@ const getJourneyList = async (req, res) => {
         attributes: ['idx', 'title', 'date', 'isTop', 'isDone'],
       },
       order: [
+        ['idx', 'DESC'],
         [{ model: ToDo }, 'isTop', 'DESC'],
         [{ model: ToDo }, 'date', 'ASC'],
       ],
