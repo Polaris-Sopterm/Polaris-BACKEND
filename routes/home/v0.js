@@ -147,12 +147,12 @@ const getHomeBanner = async (req, res) => {
       const yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
       thisWeekJourney.forEach((journeys) => {
         if (journeys.dataValues.title !== 'default') {
+          thisWeekValuesSet.add(journeys.dataValues.value1);
+          if (journeys.dataValues.value2) thisWeekValuesSet.add(journeys.dataValues.value2);
           journeys.dataValues.toDos.forEach((toDo) => {
             const toDoValue1 = journeys.dataValues.value1;
             const toDoValue2 = journeys.dataValues.value2;
 
-            thisWeekValuesSet.add(toDoValue1);
-            if (toDoValue2) thisWeekValuesSet.add(toDoValue2);
             if (toDo.dataValues.isDone) {
               if (thisWeekFoundValues[toDoValue1]) {
                 thisWeekFoundValues[toDoValue1] += 1;
