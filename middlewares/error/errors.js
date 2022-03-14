@@ -132,6 +132,10 @@ const errors = {
       code: 30,
       message: '건너뛰기 여부가 없습니다.',
     },
+    WEEK_INFO_MISSING: {
+      code: 31,
+      message: '주차 정보가 없습니다.',
+    },
   },
 };
 
