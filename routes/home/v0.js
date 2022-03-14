@@ -283,7 +283,7 @@ const getHomeBanner = async (req, res) => {
   } else if (!thisWeekFlag) {
     resJourneyComplete.mainText = '이 주에는\n생성된 여정이 없어요.';
     resJourneyComplete.boldText = '이 주에는';
-    resJourneyComplete.starList = [{ empty: 0 }];
+    resJourneyComplete.starList = [{ name: 'empty', level: 0 }];
   }
   return res.status(200).json(resJourneyComplete);
 };
