@@ -1,6 +1,5 @@
 const express = require('express');
 const moment = require('moment');
-const sequelize = require('sequelize');
 const asyncRoute = require('../../utils/asyncRoute');
 const bannerData = require('../../utils/homeBannerText.json');
 const { getWeekOfMonth } = require('../../utils/weekCalculation');
@@ -23,10 +22,11 @@ const { Journey, ToDo, Retrospect } = db;
  */
 const getHomeBanner = async (req, res) => {
   const { user } = res.locals.auth;
-  const { isSkipped } = req.params;
+  const { year, month, weekNo } = req.query;
+  const reqWeekInfo = { year, month, weekNo };
 
-  if (isSkipped === undefined) {
-    throw new HttpBadRequest(Errors.HOME.IS_SKIPPED_MISSING);
+  if (!(year && month && weekNo)) {
+    throw new HttpBadRequest(Errors.HOME.WEEK_INFO_MISSING);
   }
 
   const resJourneyComplete = {
@@ -37,6 +37,7 @@ const getHomeBanner = async (req, res) => {
     bannerTitle: null,
     bannerText: null,
     buttonText: null,
+    lastWeek: {},
   };
 
   const resJourneyIncomplete = {
@@ -47,6 +48,7 @@ const getHomeBanner = async (req, res) => {
     bannerTitle: bannerData.journey_incomplete.bannerTitle,
     bannerText: bannerData.journey_incomplete.bannerText,
     buttonText: bannerData.journey_incomplete.buttonText,
+    lastWeek: {},
   };
 
   const resRetrospect = {
@@ -57,163 +59,137 @@ const getHomeBanner = async (req, res) => {
     bannerTitle: '',
     bannerText: '',
     buttonText: bannerData.retrospect.buttonText,
+    lastWeek: {},
   };
 
-  const weekInfo = await getWeekOfMonth(new Date());
+  const today = new Date();
+  const thisWeekInfo = await getWeekOfMonth(today);
+  let thisWeekFlag = false;
+  let lastWeekInfo;
+  let lastWeekJourneys = [];
+  let lastWeekRetrospect = [];
+  let isRetrospectDone = false;
+  let isSkipped = false;
 
-  // 이번주 여정 존재 여부 확인
-  let thisWeekJourney;
-  try {
-    thisWeekJourney = await Journey.findAll({
-      include: {
-        model: ToDo,
-        required: false,
-        attributes: ['idx', 'title', 'date', 'isTop', 'isDone'],
-      },
-      where: {
-        year: weekInfo.year,
-        month: weekInfo.month,
-        weekNo: weekInfo.weekNo,
-        userIdx: user.idx,
-      },
-    });
-  } catch (e) {
-    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
-  }
+  // 요청 주가 이번주인 경우
+  if (
+    Object.entries(reqWeekInfo).toString() === Object.entries(thisWeekInfo).toString()
+  ) {
+    thisWeekFlag = true;
+    lastWeekInfo = await getWeekOfMonth(
+      new Date(today.setDate(today.getDate() - 7)),
+    );
 
-  // 가장 최신 여정 조회
-  let lastJourney;
-  try {
-    lastJourney = await Journey.findOne({
-      where: {
-        [sequelize.Op.not]: [
-          {
-            year: weekInfo.year,
-            month: weekInfo.month,
-            weekNo: weekInfo.weekNo,
-          },
-        ],
-        userIdx: user.idx,
-      },
-      order: [
-        ['year', 'DESC'],
-        ['month', 'DESC'],
-        ['weekNo', 'DESC'],
-      ],
-    });
-  } catch (e) {
-    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
-  }
-
-  // 가장 최신 여정 회고 여부 확인
-  let lastRetrospect;
-  if (lastJourney) {
-    const lastJourneyYear = lastJourney.dataValues.year;
-    const lastJourneyMonth = lastJourney.dataValues.month;
-    const lastJourneyWeekNo = lastJourney.dataValues.weekNo;
-
+    let lastDefaultJourney;
     try {
-      lastRetrospect = await Retrospect.findOne({
+      lastDefaultJourney = await Journey.findOne({
+        attributes: ['isRetrospectSkipped'],
         where: {
-          [sequelize.Op.not]: [
-            {
-              year: weekInfo.year,
-              month: weekInfo.month,
-              weekNo: weekInfo.weekNo,
-            },
-          ],
-          year: lastJourneyYear,
-          month: lastJourneyMonth,
-          weekNo: lastJourneyWeekNo,
+          title: 'default',
+          year: lastWeekInfo.year,
+          month: lastWeekInfo.month,
+          weekNo: lastWeekInfo.weekNo,
           userIdx: user.idx,
         },
       });
     } catch (e) {
       throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
     }
+    if (lastDefaultJourney) {
+      isSkipped = lastDefaultJourney.dataValues.isRetrospectSkipped;
+    }
+
+    const lastWhere = {
+      year: lastWeekInfo.year,
+      month: lastWeekInfo.month,
+      weekNo: lastWeekInfo.weekNo,
+      userIdx: user.idx,
+    };
+
+    try {
+      lastWeekRetrospect = await Retrospect.findOne({
+        where: lastWhere,
+      });
+    } catch (e) {
+      throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+    }
+
+    try {
+      lastWeekJourneys = await Journey.findAll({
+        include: {
+          model: ToDo,
+          required: false,
+          attributes: ['idx', 'isDone'],
+        },
+        where: lastWhere,
+      });
+    } catch (e) {
+      throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+    }
+
+    if (
+      lastWeekRetrospect || (isSkipped && !lastWeekRetrospect) || lastWeekJourneys.length === 0
+    ) isRetrospectDone = true;
+
+    // 1. 요청 주가 이번주 & 회고 미완료 & 회고 건너뛰기(x) => [resRetrospect]
+    if (!isRetrospectDone) {
+      let allToDosCnt = 0;
+      let doneToDosCnt = 0;
+
+      lastWeekJourneys.forEach((journeys) => {
+        journeys.dataValues.toDos.forEach((toDo) => {
+          allToDosCnt += 1;
+          if (toDo.dataValues.isDone) doneToDosCnt += 1;
+        });
+      });
+
+      // 최근 여정 완료한 일 / 전체 한 일 >= 0.6
+      if (doneToDosCnt / allToDosCnt >= 0.6) {
+        const randomInteger = getRandomInteger(
+          0,
+          bannerData.retrospect.over60.mainText.length - 1,
+        );
+        resRetrospect.mainText = `${lastWeekInfo.month}월 ${lastWeekInfo.weekNo}째주${bannerData.retrospect.over60.mainText[randomInteger]}`;
+        resRetrospect.boldText = `${lastWeekInfo.month}월 ${lastWeekInfo.weekNo}째주`;
+        resRetrospect.bannerTitle = bannerData.retrospect.over60.bannerTitle;
+        resRetrospect.bannerText = bannerData.retrospect.over60.bannerText;
+      } else {
+        // 최근 여정 완료한 일 / 전체 한 일 < 0.6
+        const randomInteger = getRandomInteger(
+          0,
+          bannerData.retrospect.under60.mainText.length - 1,
+        );
+        resRetrospect.mainText = bannerData.retrospect.under60.mainText[randomInteger];
+        resRetrospect.boldText = bannerData.retrospect.under60.boldText[randomInteger];
+        resRetrospect.bannerTitle = bannerData.retrospect.under60.bannerTitle;
+        resRetrospect.bannerText = bannerData.retrospect.under60.bannerText;
+      }
+      resRetrospect.lastWeek = lastWeekInfo;
+      return res.status(200).json(resRetrospect);
+    }
   }
 
-  // 1. 회고 완료  or 건너뛰기 한 경우 or {회고 미완료&지난 여정이 없는 경우}
-  if (
-    lastRetrospect
-    || isSkipped === 'true'
-    || (!lastRetrospect && !lastJourney)
-  ) {
-    // 1-1. 이번주 여정 작성 완료
-    if (thisWeekJourney.length !== 0) {
-      const thisWeekValuesSet = new Set();
-      const thisWeekFoundValues = {};
-      let yesterdayValueCnt = 0;
-      const yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
-      thisWeekJourney.forEach((journeys) => {
-        if (journeys.dataValues.title !== 'default') {
-          journeys.dataValues.toDos.forEach((toDo) => {
-            const toDoValue1 = journeys.dataValues.value1;
-            const toDoValue2 = journeys.dataValues.value2;
+  let reqWeekJourneys;
+  try {
+    reqWeekJourneys = await Journey.findAll({
+      include: {
+        model: ToDo,
+        required: false,
+        attributes: ['idx', 'isDone'],
+      },
+      where: {
+        year,
+        month,
+        weekNo,
+        userIdx: user.idx,
+      },
+    });
+  } catch (e) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+  }
 
-            thisWeekValuesSet.add(toDoValue1);
-            if (toDoValue2) thisWeekValuesSet.add(toDoValue2);
-            if (toDo.dataValues.isDone) {
-              if (thisWeekFoundValues[toDoValue1]) {
-                thisWeekFoundValues[toDoValue1] += 1;
-              } else {
-                thisWeekFoundValues[toDoValue1] = 1;
-              }
-
-              if (toDoValue2) {
-                if (thisWeekFoundValues[toDoValue2]) {
-                  thisWeekFoundValues[toDoValue2] += 1;
-                } else {
-                  thisWeekFoundValues[toDoValue2] = 1;
-                }
-              }
-
-              if (moment(toDo.dataValues.isDone).format('YYYY-MM-DD') === yesterday) {
-                yesterdayValueCnt += 1;
-                if (toDoValue2) yesterdayValueCnt += 1;
-              }
-            }
-          });
-        }
-      });
-
-      const thisWeekValuesList = [];
-      thisWeekValuesSet.forEach((thisWeekValue) => {
-        thisWeekValuesList.push({ name: thisWeekValue, level: 0 });
-      });
-
-      const thisWeekFoundValuesList = [];
-      Object.keys(thisWeekFoundValues).forEach((value) => {
-        if (thisWeekFoundValues[value] >= 7) {
-          thisWeekFoundValuesList.push({ name: value, level: 4 });
-        } else if (thisWeekFoundValues[value] >= 5) {
-          thisWeekFoundValuesList.push({ name: value, level: 3 });
-        } else if (thisWeekFoundValues[value] >= 3) {
-          thisWeekFoundValuesList.push({ name: value, level: 2 });
-        } else if (thisWeekFoundValues[value] >= 1) {
-          thisWeekFoundValuesList.push({ name: value, level: 1 });
-        } else {
-          thisWeekFoundValuesList.push({ name: value, level: 0 });
-        }
-      });
-
-      // 1-1-1. 어제 찾은 별이 있는 경우
-      resJourneyComplete.starList = thisWeekFoundValuesList;
-      if (yesterdayValueCnt > 0) {
-        resJourneyComplete.mainText = `어제는\n${yesterdayValueCnt}개의 별을 발견했어요.`;
-        resJourneyComplete.boldText = `${yesterdayValueCnt}개의 별`;
-        return res.status(200).json(resJourneyComplete);
-      }
-
-      // 1-1-2. 어제 찾은 별이 없는 경우
-      resJourneyComplete.mainText = '오늘 별을 찾으러\n떠나볼까요?';
-      resJourneyComplete.boldText = '별을 찾으러';
-      if (Object.keys(thisWeekFoundValues).length === 0) {
-        resJourneyComplete.starList = thisWeekValuesList;
-      }
-      return res.status(200).json(resJourneyComplete);
-    }
-    // 1-2. 이번주 여정 작성 미완료
+  // 2. 요청 주가 이번주 & 여정 작성 미완료 => [resJourneyIncomplete]
+  if (thisWeekFlag && reqWeekJourneys.length === 0) {
     const randomInteger = getRandomInteger(
       0,
       bannerData.journey_incomplete.mainText.length - 1,
@@ -222,64 +198,101 @@ const getHomeBanner = async (req, res) => {
     resJourneyIncomplete.boldText = bannerData.journey_incomplete.boldText[randomInteger];
     return res.status(200).json(resJourneyIncomplete);
   }
-  // 2. 회고 미완료 &. 지난 여정이 있는 경우
-  if (!lastRetrospect && lastJourney) {
-    let lastWeekJourneys;
-    try {
-      lastWeekJourneys = await Journey.findAll({
-        include: {
-          model: ToDo,
-          required: false,
-          attributes: ['idx', 'title', 'date', 'isTop', 'isDone'],
-        },
-        where: {
-          year: lastJourney.dataValues.year,
-          month: lastJourney.dataValues.month,
-          weekNo: lastJourney.dataValues.weekNo,
-          userIdx: user.idx,
-        },
-      });
-    } catch (e) {
-      throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
-    }
 
-    let allToDosCnt = 0;
-    let doneToDosCnt = 0;
+  // 3. [resJourneyComplete]
+  // 3-1. 여정 작성 완료
+  if (reqWeekJourneys.length !== 0) {
+    const reqWeekValueSet = new Set();
+    const reqWeekFoundValues = {};
+    reqWeekJourneys.forEach((journey) => {
+      if (journey.dataValues.title !== 'default') {
+        reqWeekValueSet.add(journey.dataValues.value1);
+        if (journey.dataValues.value2) reqWeekValueSet.add(journey.dataValues.value2);
+        journey.dataValues.toDos.forEach((toDo) => {
+          const toDoValue1 = journey.dataValues.value1;
+          const toDoValue2 = journey.dataValues.value2;
 
-    lastWeekJourneys.forEach((journeys) => {
-      journeys.dataValues.toDos.forEach((toDo) => {
-        allToDosCnt += 1;
-        if (toDo.dataValues.isDone) {
-          doneToDosCnt += 1;
-        }
-      });
+          if (toDo.dataValues.isDone) {
+            if (reqWeekFoundValues[toDoValue1]) reqWeekFoundValues[toDoValue1] += 1;
+            else reqWeekFoundValues[toDoValue1] = 1;
+
+            if (toDoValue2) {
+              if (reqWeekFoundValues[toDoValue2]) reqWeekFoundValues[toDoValue2] += 1;
+              else reqWeekFoundValues[toDoValue2] = 1;
+            }
+          }
+        });
+      }
+    });
+    const reqWeekValueList = [];
+    reqWeekValueSet.forEach((thisWeekValue) => {
+      reqWeekValueList.push({ name: thisWeekValue, level: 0 });
     });
 
-    resRetrospect.mainText = '때로는\n휴식도 도움이 됩니다.';
-    resRetrospect.boldText = '때로는';
-    resRetrospect.bannerTitle = bannerData.retrospect.under60.bannerTitle;
-    resRetrospect.bannerText = bannerData.retrospect.under60.bannerText;
-    // 2-1. 최근 여정 완료한 일 / 전체 한 일 >= 60
-    if (doneToDosCnt / allToDosCnt >= 0.6) {
-      const randomInteger = getRandomInteger(
-        0,
-        bannerData.retrospect.over60.mainText.length - 1,
-      );
-      resRetrospect.mainText = `${lastJourney.dataValues.month}월 ${lastJourney.dataValues.weekNo}째주${bannerData.retrospect.over60.mainText[randomInteger]}`;
-      resRetrospect.boldText = `${lastJourney.dataValues.month}월 ${lastJourney.dataValues.weekNo}째주`;
-      resRetrospect.bannerTitle = bannerData.retrospect.over60.bannerTitle;
-      resRetrospect.bannerText = bannerData.retrospect.over60.bannerText;
+    const reqWeekFoundValueList = [];
+    Object.keys(reqWeekFoundValues).forEach((value) => {
+      if (reqWeekFoundValues[value] >= 7) {
+        reqWeekFoundValueList.push({ name: value, level: 4 });
+      } else if (reqWeekFoundValues[value] >= 5) {
+        reqWeekFoundValueList.push({ name: value, level: 3 });
+      } else if (reqWeekFoundValues[value] >= 3) {
+        reqWeekFoundValueList.push({ name: value, level: 2 });
+      } else if (reqWeekFoundValues[value] >= 1) {
+        reqWeekFoundValueList.push({ name: value, level: 1 });
+      } else {
+        reqWeekFoundValueList.push({ name: value, level: 0 });
+      }
+    });
+
+    resJourneyComplete.starList = reqWeekFoundValueList;
+    if (Object.keys(reqWeekFoundValues).length === 0) {
+      resJourneyComplete.starList = reqWeekValueList;
     }
-    return res.status(200).json(resRetrospect);
+
+    // 3-1-1. 요청 주가 이번주가 아닌 경우
+    if (!thisWeekFlag) {
+      resJourneyComplete.mainText = `${month}월 ${weekNo}째주에\n찾은 별들이에요!`;
+      resJourneyComplete.boldText = `${month}월 ${weekNo}째주`;
+    } else {
+      // 3-1-2. 요청 주가 이번주인 경우
+      let yesterdayValueCnt = 0;
+      const yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
+      reqWeekJourneys.forEach((journey) => {
+        if (journey.dataValues.title !== 'default') {
+          journey.dataValues.toDos.forEach((toDo) => {
+            const toDoValue2 = journey.dataValues.value2;
+            if (
+              moment(toDo.dataValues.isDone).format('YYYY-MM-DD') === yesterday
+            ) {
+              yesterdayValueCnt += 1;
+              if (toDoValue2) yesterdayValueCnt += 1;
+            }
+          });
+        }
+      });
+      // 3-1-2-1. 어제 찾은 별이 있는 경우
+      if (yesterdayValueCnt > 0) {
+        resJourneyComplete.mainText = `어제는\n${yesterdayValueCnt}개의 별을 발견했어요.`;
+        resJourneyComplete.boldText = `${yesterdayValueCnt}개의 별`;
+      } else {
+        // 3-1-2-2. 어제 찾은 별이 없는 경우
+        resJourneyComplete.mainText = '오늘 별을 찾으러\n떠나볼까요?';
+        resJourneyComplete.boldText = '별을 찾으러';
+      }
+    }
+  } else if (!thisWeekFlag) {
+    resJourneyComplete.mainText = '이 주에는\n생성된 여정이 없어요.';
+    resJourneyComplete.boldText = '이 주에는';
+    resJourneyComplete.starList = [{ name: 'empty', level: 0 }];
   }
-  return res.status(200);
+  return res.status(200).json(resJourneyComplete);
 };
 
 const router = express.Router();
 
 // 홈 화면 배너 조회
 router.get(
-  '/banner/:isSkipped',
+  '/banner',
   auth.authenticate({}),
   asyncRoute(getHomeBanner),
 );
