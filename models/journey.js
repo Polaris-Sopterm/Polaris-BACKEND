@@ -73,6 +73,10 @@ module.exports = (sequelize, DataTypes) => {
           notNull: true,
         },
       },
+      isRetrospectSkipped: {
+        allowNull: true,
+        type: DataTypes.BOOLEAN,
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE(3),
