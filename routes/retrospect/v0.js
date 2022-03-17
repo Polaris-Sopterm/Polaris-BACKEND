@@ -200,6 +200,45 @@ const getRetrospect = async (req, res) => {
     .json(retrospect);
 };
 
+/**
+ * 회고 건너뛰기
+ * @param {*} req
+ * @param {*} res
+ */
+const skipRetrospect = async (req, res) => {
+  const { user } = res.locals.auth;
+  const { year, month, weekNo } = req.body;
+
+  if (!(year && month && weekNo)) {
+    throw new HttpBadRequest(Errors.RETROSPECT.WEEK_DATA_MISSING);
+  }
+
+  let defaultJourney;
+  try {
+    defaultJourney = await Journey.findOne({
+      where: {
+        title: 'default',
+        year,
+        month,
+        weekNo,
+        userIdx: user.idx,
+      },
+    });
+  } catch (e) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
+  }
+  if (!defaultJourney) throw new HttpNotFound(Errors.RETROSPECT.NOT_FOUND);
+  defaultJourney.isRetrospectSkipped = true;
+
+  try {
+    await defaultJourney.save();
+  } catch (err) {
+    throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
+  }
+
+  return res.status(201).json(defaultJourney);
+};
+
 const router = express.Router();
 
 router.get('/value', auth.authenticate({}), asyncRoute(listValues));
@@ -208,9 +247,12 @@ router.post('/', auth.authenticate({}), asyncRoute(createRetrospect));
 
 router.get('/', auth.authenticate({}), asyncRoute(getRetrospect));
 
+router.patch('/skip', auth.authenticate({}), asyncRoute(skipRetrospect));
+
 module.exports = {
   router,
   listValues,
   createRetrospect,
   getRetrospect,
+  skipRetrospect,
 };
