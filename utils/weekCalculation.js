@@ -4,7 +4,7 @@
  * @returns {{month: number, year: number, weekNo: number}|{month: number, year: number, weekNo}|*|
  * {month: number, year: number, weekNo: number}}
  */
-const getWeekOfMonth = (journeyDate) => {
+const getWeekOfMonthByIso8601 = (journeyDate) => {
   const year = journeyDate.getFullYear();
   const month = journeyDate.getMonth() + 1;
   const date = journeyDate.getDate();
@@ -34,8 +34,8 @@ const getWeekOfMonth = (journeyDate) => {
 
     // 해당 경우에서 1일을 포함한 주는 전 월의 마지막 주에 해당된다.
     return month === 1
-      ? getWeekOfMonth(new Date(year - 1, 11, 31))
-      : getWeekOfMonth(new Date(year, month - 1, 0));
+      ? getWeekOfMonthByIso8601(new Date(year - 1, 11, 31))
+      : getWeekOfMonthByIso8601(new Date(year, month - 1, 0));
   }
 
   // 1일이 목요일 이전인 경우
@@ -61,6 +61,6 @@ const getThursdayFromWeekNo = (year, month, weekNo) => {
 };
 
 module.exports = {
-  getWeekOfMonth,
+  getWeekOfMonthByIso8601,
   getThursdayFromWeekNo,
 };
