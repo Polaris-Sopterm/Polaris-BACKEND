@@ -5,7 +5,7 @@ const moment = require('moment');
 const asyncRoute = require('../../utils/asyncRoute');
 const db = require('../../models');
 const auth = require('../../middlewares/auth');
-const { getWeekOfMonth } = require('../../utils/weekCalculation');
+const { getWeekOfMonthByIso8601 } = require('../../utils/weekCalculation');
 const {
   Errors,
   HttpBadRequest,
@@ -32,7 +32,7 @@ const createToDo = async (req, res) => {
   if (!title) throw new HttpBadRequest(Errors.TODO.TITLE_MISSING);
   if (isTop.isNull) throw new HttpBadRequest(Errors.TODO.IS_TOP_MISSING);
 
-  const weekInfo = await getWeekOfMonth(new Date(date));
+  const weekInfo = await getWeekOfMonthByIso8601(new Date(date));
 
   const transaction = await db.sequelize.transaction();
 
@@ -149,7 +149,7 @@ const updateToDo = async (req, res) => {
   if (isTop !== undefined) toDo.isTop = isTop;
 
   if (journeyIdx && date) {
-    const weekInfo = await getWeekOfMonth(new Date(date));
+    const weekInfo = await getWeekOfMonthByIso8601(new Date(date));
 
     let journey;
     try {
@@ -281,6 +281,7 @@ const listToDoByDate = async (req, res) => {
   listToDoData.forEach((toDo) => {
     const utcDate = new Date(toDo.dataValues.date).toUTCString();
     toDo.dataValues.date = moment(utcDate).format('YYYY-MM-DD');
+
     toDoList.push(toDo.dataValues);
   });
 

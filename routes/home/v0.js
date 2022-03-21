@@ -2,7 +2,7 @@ const express = require('express');
 const moment = require('moment');
 const asyncRoute = require('../../utils/asyncRoute');
 const bannerData = require('../../utils/homeBannerText.json');
-const { getWeekOfMonth } = require('../../utils/weekCalculation');
+const { getWeekOfMonthByIso8601 } = require('../../utils/weekCalculation');
 const { getRandomInteger } = require('../../utils/random');
 const db = require('../../models');
 const auth = require('../../middlewares/auth');
@@ -63,7 +63,7 @@ const getHomeBanner = async (req, res) => {
   };
 
   const today = new Date();
-  const thisWeekInfo = await getWeekOfMonth(today);
+  const thisWeekInfo = await getWeekOfMonthByIso8601(today);
   let thisWeekFlag = false;
   let lastWeekInfo;
   let lastWeekJourneys = [];
@@ -76,7 +76,7 @@ const getHomeBanner = async (req, res) => {
     Object.entries(reqWeekInfo).toString() === Object.entries(thisWeekInfo).toString()
   ) {
     thisWeekFlag = true;
-    lastWeekInfo = await getWeekOfMonth(
+    lastWeekInfo = await getWeekOfMonthByIso8601(
       new Date(today.setDate(today.getDate() - 7)),
     );
 
