@@ -3,7 +3,7 @@
 const express = require('express');
 
 const asyncRoute = require('../../utils/asyncRoute');
-const { getWeekOfMonth } = require('../../utils/weekCalculation');
+const { getWeekOfMonthByIso8601 } = require('../../utils/weekCalculation');
 const { Errors, HttpInternalServerError } = require('../../middlewares/error');
 
 /**
@@ -15,7 +15,7 @@ const getWeekNo = async (req, res) => {
   const { date } = req.params;
 
   const newDate = new Date(date);
-  const weekInfo = await getWeekOfMonth(newDate);
+  const weekInfo = await getWeekOfMonthByIso8601(newDate);
 
   const resBody = {
     year: weekInfo.year,
@@ -69,14 +69,14 @@ const lastMonthWeekNo = async (req, res) => {
 
         date = `${year}-${month}-${lastDay}`;
 
-        weekNo = await getWeekOfMonth(new Date(date));
+        weekNo = await getWeekOfMonthByIso8601(new Date(date));
 
         if (weekNo.weekNo === 1) {
           while (weekNo.weekNo === 1) {
             lastDay -= 1;
             date = `${year}-${tmpMonth}-${lastDay}`;
 
-            weekNo = await getWeekOfMonth(new Date(date));
+            weekNo = await getWeekOfMonthByIso8601(new Date(date));
 
             if (weekNo.weekNo !== 1) break;
           }

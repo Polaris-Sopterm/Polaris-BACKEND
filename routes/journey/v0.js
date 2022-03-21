@@ -3,7 +3,7 @@ const moment = require('moment');
 const asyncRoute = require('../../utils/asyncRoute');
 const db = require('../../models');
 const auth = require('../../middlewares/auth');
-const { getWeekOfMonth, getThursdayFromWeekNo } = require('../../utils/weekCalculation');
+const { getWeekOfMonthByIso8601, getThursdayFromWeekNo } = require('../../utils/weekCalculation');
 const { getRandomValue } = require('../../utils/random');
 const {
   Errors,
@@ -174,7 +174,7 @@ const getJourneyTitleList = async (req, res) => {
 
   if (!date) throw new HttpBadRequest(Errors.TODO.DATE_MISSING);
 
-  const weekInfo = await getWeekOfMonth(new Date(date));
+  const weekInfo = await getWeekOfMonthByIso8601(new Date(date));
 
   let journeys;
   try {
@@ -212,8 +212,8 @@ const getJourneyList = async (req, res) => {
 
   // 주차 리스트 생성 (사용자 가입 전 주 ~ 현재 기준 다다음주)
   const joinedWeek = moment(user.createdAt).subtract(7, 'days');
-  const joinedWeekInfo = getWeekOfMonth(new Date(joinedWeek));
-  const todayWeekInfo = getWeekOfMonth(new Date());
+  const joinedWeekInfo = getWeekOfMonthByIso8601(new Date(joinedWeek));
+  const todayWeekInfo = getWeekOfMonthByIso8601(new Date());
 
   const weekList = [joinedWeekInfo];
   let nextWeek = joinedWeek;
@@ -221,14 +221,14 @@ const getJourneyList = async (req, res) => {
 
   while (JSON.stringify(nextWeekInfo) !== JSON.stringify(todayWeekInfo)) {
     nextWeek = new Date(moment(nextWeek).add(7, 'days'));
-    nextWeekInfo = getWeekOfMonth(nextWeek);
+    nextWeekInfo = getWeekOfMonthByIso8601(nextWeek);
     weekList.push(nextWeekInfo);
   }
 
   for (let i = 0; i < 2;) {
     i += 1;
     nextWeek = new Date(moment(nextWeek).add(7, 'days'));
-    nextWeekInfo = getWeekOfMonth(nextWeek);
+    nextWeekInfo = getWeekOfMonthByIso8601(nextWeek);
     weekList.push(nextWeekInfo);
   }
 
@@ -238,7 +238,7 @@ const getJourneyList = async (req, res) => {
   let journeyWeek;
 
   if (date) {
-    const weekInfo = await getWeekOfMonth(new Date(date));
+    const weekInfo = await getWeekOfMonthByIso8601(new Date(date));
     journeyYear = weekInfo.year;
     journeyMonth = weekInfo.month;
     journeyWeek = weekInfo.weekNo;
