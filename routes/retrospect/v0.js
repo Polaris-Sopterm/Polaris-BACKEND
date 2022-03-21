@@ -209,7 +209,7 @@ const skipRetrospect = async (req, res) => {
   const { user } = res.locals.auth;
   const { year, month, weekNo } = req.body;
 
-  if (!(year && month && weekNo)) {
+  if (!year || !month || !weekNo) {
     throw new HttpBadRequest(Errors.RETROSPECT.WEEK_DATA_MISSING);
   }
 
@@ -227,7 +227,7 @@ const skipRetrospect = async (req, res) => {
   } catch (e) {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, e);
   }
-  if (!defaultJourney) throw new HttpNotFound(Errors.RETROSPECT.NOT_FOUND);
+  if (!defaultJourney) throw new HttpNotFound(Errors.JOURNEY.NOT_FOUND);
   defaultJourney.isRetrospectSkipped = true;
 
   try {
@@ -236,7 +236,7 @@ const skipRetrospect = async (req, res) => {
     throw new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
   }
 
-  return res.status(201).json(defaultJourney);
+  return res.status(201).json({ isRetrospectSkipped: defaultJourney.isRetrospectSkipped });
 };
 
 const router = express.Router();
