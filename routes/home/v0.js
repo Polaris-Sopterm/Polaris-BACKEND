@@ -202,52 +202,40 @@ const getHomeBanner = async (req, res) => {
   // 3. [resJourneyComplete]
   // 3-1. 여정 작성 완료
   if (reqWeekJourneys.length !== 0) {
-    const reqWeekValueSet = new Set();
     const reqWeekFoundValues = {};
     reqWeekJourneys.forEach((journey) => {
       if (journey.dataValues.title !== 'default') {
-        reqWeekValueSet.add(journey.dataValues.value1);
-        if (journey.dataValues.value2) reqWeekValueSet.add(journey.dataValues.value2);
+        const toDoValue1 = journey.dataValues.value1;
+        const toDoValue2 = journey.dataValues.value2;
+        if (!reqWeekFoundValues[toDoValue1]) reqWeekFoundValues[toDoValue1] = 0;
+        if ((toDoValue2) && (!reqWeekFoundValues[toDoValue2])) {
+          reqWeekFoundValues[toDoValue2] = 0;
+        }
         journey.dataValues.toDos.forEach((toDo) => {
-          const toDoValue1 = journey.dataValues.value1;
-          const toDoValue2 = journey.dataValues.value2;
-
           if (toDo.dataValues.isDone) {
-            if (reqWeekFoundValues[toDoValue1]) reqWeekFoundValues[toDoValue1] += 1;
-            else reqWeekFoundValues[toDoValue1] = 1;
-
-            if (toDoValue2) {
-              if (reqWeekFoundValues[toDoValue2]) reqWeekFoundValues[toDoValue2] += 1;
-              else reqWeekFoundValues[toDoValue2] = 1;
-            }
+            reqWeekFoundValues[toDoValue1] += 1;
+            if (toDoValue2) reqWeekFoundValues[toDoValue2] += 1;
           }
         });
       }
     });
-    const reqWeekValueList = [];
-    reqWeekValueSet.forEach((thisWeekValue) => {
-      reqWeekValueList.push({ name: thisWeekValue, level: 0 });
-    });
 
-    const reqWeekFoundValueList = [];
+    const reqWeekValueList = [];
     Object.keys(reqWeekFoundValues).forEach((value) => {
       if (reqWeekFoundValues[value] >= 7) {
-        reqWeekFoundValueList.push({ name: value, level: 4 });
+        reqWeekValueList.push({ name: value, level: 4 });
       } else if (reqWeekFoundValues[value] >= 5) {
-        reqWeekFoundValueList.push({ name: value, level: 3 });
+        reqWeekValueList.push({ name: value, level: 3 });
       } else if (reqWeekFoundValues[value] >= 3) {
-        reqWeekFoundValueList.push({ name: value, level: 2 });
+        reqWeekValueList.push({ name: value, level: 2 });
       } else if (reqWeekFoundValues[value] >= 1) {
-        reqWeekFoundValueList.push({ name: value, level: 1 });
+        reqWeekValueList.push({ name: value, level: 1 });
       } else {
-        reqWeekFoundValueList.push({ name: value, level: 0 });
+        reqWeekValueList.push({ name: value, level: 0 });
       }
     });
 
-    resJourneyComplete.starList = reqWeekFoundValueList;
-    if (Object.keys(reqWeekFoundValues).length === 0) {
-      resJourneyComplete.starList = reqWeekValueList;
-    }
+    resJourneyComplete.starList = reqWeekValueList;
 
     // 3-1-1. 요청 주가 이번주가 아닌 경우
     if (!thisWeekFlag) {
