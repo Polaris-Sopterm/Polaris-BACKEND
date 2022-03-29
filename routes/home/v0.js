@@ -189,7 +189,7 @@ const getHomeBanner = async (req, res) => {
   }
 
   // 2. 요청 주가 이번주 & 여정 작성 미완료 => [resJourneyIncomplete]
-  if (thisWeekFlag && reqWeekJourneys.length === 0) {
+  if (thisWeekFlag && reqWeekJourneys.length <= 1) {
     const randomInteger = getRandomInteger(
       0,
       bannerData.journey_incomplete.mainText.length - 1,
@@ -201,7 +201,7 @@ const getHomeBanner = async (req, res) => {
 
   // 3. [resJourneyComplete]
   // 3-1. 여정 작성 완료
-  if (reqWeekJourneys.length !== 0) {
+  if (reqWeekJourneys.length > 1) {
     const reqWeekFoundValues = {};
     reqWeekJourneys.forEach((journey) => {
       if (journey.dataValues.title !== 'default') {
