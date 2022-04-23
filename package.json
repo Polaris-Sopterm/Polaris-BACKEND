@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "lint": "node ./node_modules/eslint/bin/eslint .",
+    "lint": "node ./node_modules/eslint/bin/eslint . --fix",
     "test": "node ./node_modules/nyc/bin/nyc.js --reporter=text --reporter=html ./node_modules/mocha/bin/mocha tests tests/**/*.spec.js tests/**/**/*.spec.js"
   },
   "dependencies": {
