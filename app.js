@@ -2,7 +2,6 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-const { handler: errorHandler } = require('./middlewares/error');
 
 const indexRouter = require('./routes/index');
 const authRouter = require('./routes/auth');
@@ -12,6 +11,7 @@ const journeyRouter = require('./routes/journey');
 const retrospectRouter = require('./routes/retrospect');
 const homeRouter = require('./routes/home');
 const weekNoRouter = require('./routes/weekNo');
+const { errorHandler } = require('./utils/slack/error/error');
 
 const app = express();
 
@@ -35,5 +35,4 @@ app.use('/home/v0', homeRouter.v0.router);
 app.use('/weekNo/v0', weekNoRouter.v0.router);
 
 app.use(errorHandler);
-
 module.exports = app;
