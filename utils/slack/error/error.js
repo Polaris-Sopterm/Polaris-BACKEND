@@ -23,6 +23,17 @@ const errorHandler = (err, req, res, next) => {
     const message = {
       blocks: [
         {
+          type: 'header',
+          text: {
+            type: 'plain_text',
+            text: `☘ ️ENV = ${process.env.NODE_ENV} ☘`,
+            emoji: true,
+          },
+        },
+        {
+          type: 'divider',
+        },
+        {
           type: 'section',
           text: {
             type: 'mrkdwn',
