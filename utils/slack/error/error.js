@@ -3,8 +3,8 @@ const moment = require('moment');
 const { sendErrorMessage } = require('./webhook');
 const { HttpError, HttpInternalServerError, Errors } = require('../../../middlewares/error');
 
-// eslint-disable-next-line consistent-return
-const errorHandler = (err, req, res) => {
+// eslint-disable-next-line no-unused-vars,consistent-return
+const errorHandler = (err, req, res, next) => {
   if (!(err instanceof HttpError) || !err.status) {
     // eslint-disable-next-line no-param-reassign
     err = new HttpInternalServerError(Errors.SERVER.UNEXPECTED_ERROR, err);
